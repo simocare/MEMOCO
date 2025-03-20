@@ -1,2 +1,7 @@
 *.o
 *.out
+*.dat
+*.lp
+*.sol
+.vscode/
+myenv/

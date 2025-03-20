@@ -1,6 +1,8 @@
 #include <cstdio>
 #include <iostream>
 #include <vector>
+#include <fstream>
+#include <sstream>
 #include "cpxmacro.h"
 
 using namespace std;
@@ -9,14 +11,15 @@ using namespace std;
 int status;
 char errmsg[BUF_SIZE];
 
-// Data
-const int N = 4;
 
-// Cost matrix (NxN, not NxA)
-const double C[N][N] = { {1.0, 1.0, 1.0, 1.0},
-                         {1.0, 1.0, 1.0, 1.0},
-                         {1.0, 1.0, 1.0, 1.0},
-                         {1.0, 1.0, 1.0, 1.0} };
+// // Data
+// const int N = 4;
+
+// // Cost matrix (NxN, not NxA)
+// const double C[N][N] = { {1.0, 1.0, 1.0, 1.0},
+//                          {1.0, 1.0, 1.0, 1.0},
+//                          {1.0, 1.0, 1.0, 1.0},
+//                          {1.0, 1.0, 1.0, 1.0} };
 
 const int NAME_SIZE = 512;
 char name[NAME_SIZE];
@@ -25,8 +28,55 @@ char name[NAME_SIZE];
 vector<vector<int>> map_x;  // x_ij ---> map_x[i][j]
 vector<vector<int>> map_y;  // y_ij ---> map_y[i][j]
 
-void setupLP(CEnv env, Prob lp)
-{
+struct Hole {
+    int x, y;
+};
+
+std::vector<Hole> readBoard(const std::string& filename) {
+    std::ifstream inFile(filename);
+    if (!inFile) {
+        std::cerr << "Error opening file: " << filename << std::endl;
+        exit(1);
+    }
+
+    int size;
+    inFile >> size; // Read board size (assumed square)
+    std::vector<Hole> holes;
+
+    for (int y = 0; y < size; ++y) {
+        for (int x = 0; x < size; ++x) {
+            int value;
+            inFile >> value;
+            if (value == 1) {
+                holes.push_back({x, y}); // Store hole position
+            }
+        }
+    }
+
+    inFile.close();
+    return holes;
+}
+
+
+// Function to compute the cost matrix based on the hole positions
+std::vector<std::vector<double>> computeCostMatrix(const std::vector<Hole>& holes) {
+    int N = holes.size();
+    std::vector<std::vector<double>> C(N, std::vector<double>(N, 0));
+
+    // Compute Euclidean distances between holes
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            if (i != j) {
+                double dx = holes[i].x - holes[j].x;
+                double dy = holes[i].y - holes[j].y;
+                C[i][j] = sqrt(dx * dx + dy * dy);
+            }
+        }
+    }
+    return C;
+}
+
+void setupLP(CEnv env, Prob lp, const std::vector<std::vector<double>>& C, int N) {
     int current_var_position = 0;
 
     /* MAP FOR x VARS */
@@ -73,6 +123,8 @@ void setupLP(CEnv env, Prob lp)
             char* yname = (char*)(&name[0]);
             CHECKED_CPX_CALL(CPXnewcols, env, lp, 1, &C[i][j], &lb, &ub, &ytype, &yname);
             map_y[i][j] = current_var_position++;
+            // 🔍 DEBUG: Print assigned variable index
+            std::cout << "Assigned y_" << i << "_" << j << " to index " << map_y[i][j] << std::endl;
         }
     }
 
@@ -192,86 +244,40 @@ void setupLP(CEnv env, Prob lp)
     // std::cout << "Adding return-to-origin constraint (flow into node 0)" << std::endl;
     // CHECKED_CPX_CALL(CPXaddrows, env, lp, 0, 1, idx.size(), &rhs, &sense, &matbeg, idx.data(), coef.data(), NULL, NULL);
 
+    std::cout << "Finished adding constraints." << std::endl;
 }
 
 int main (int argc, char const *argv[])
 {
-    try
-    {
-        ///// init
-        DECL_ENV( env );
-        DECL_PROB( env, lp );
-        
-        ///// setup LP
-        setupLP(env, lp);
+    std::vector<Hole> holes = readBoard("board.dat");
+    std::vector<std::vector<double>> C = computeCostMatrix(holes);
+
+    try {
+        DECL_ENV(env);
+        DECL_PROB(env, lp);
+
+        setupLP(env, lp, C, holes.size()); // Pass computed cost matrix
 
         CHECKED_CPX_CALL(CPXwriteprob, env, lp, "debug_model.lp", NULL);
         
         CHECKED_CPX_CALL(CPXsetdblparam, env, CPX_PARAM_EPRHS, 1e-9);
-
-        ///// optimize
-        CHECKED_CPX_CALL( CPXmipopt, env, lp );
         
-        ///// print
-        // print objective function value
+        //optimize
+        std::cout << "Starting optimization..." << std::endl;
+        CHECKED_CPX_CALL(CPXmipopt, env, lp);
+        std::cout << "Optimization completed." << std::endl;
+
         double objval;
-        CHECKED_CPX_CALL( CPXgetobjval, env, lp, &objval );
-        std::cout << "Objval: " << objval << std::endl;
-        
-        // print value of decision variables
-        std::vector<double> varvals; // place to store variable values
-        int n = CPXgetnumcols(env, lp);    // get number of variables
-        varvals.resize(n);
-        int fromIdx = 0;
-        int toIdx = n - 1;
-        CHECKED_CPX_CALL(CPXgetx, env, lp, varvals.data(), fromIdx, toIdx);
-        for (int p = 0; p < n; ++p) {
-            // to skip all the zero-valued variables
-            if (varvals[p] <= 1e-6 && varvals[p] >= -1e-6) continue;
-            std::cout << "var in position " << p << " has optimal value " << varvals[p] << std::endl;
-        }
-
-        // Print y variables
-        for (int i = 0; i < N; i++) {
-            for (int j = 0; j < N; j++) {
-                if (map_y[i][j] >= 0) {
-                    if (std::abs(varvals[map_y[i][j]]) < 1e-6) 
-                        varvals[map_y[i][j]] = 0;
-                    std::cout << "y_" << i << "_" << j << " = " << varvals[map_y[i][j]] << std::endl;
-                }
-            }
-        }
-
-        // Print x variables
-        for (int i = 0; i < N; i++) {
-            for (int j = 0; j < N; j++) {
-                if (map_x[i][j] >= 0) {
-                    std::cout << "x_" << i << "_" << j << " = " << varvals[map_x[i][j]] << std::endl;
-                }
-            }
-        }
-
-        // Print flow
-        for (int i = 0;
-             i < N;
-             i++) {
-            for (int j = 0; j < N; j++) {
-                if (map_x[i][j] >= 0) {
-                    std::cout << "Flow from " << i << " to " << j << " = " << varvals[map_x[i][j]] << std::endl;
-                }
-            }
-        }
+        CHECKED_CPX_CALL(CPXgetobjval, env, lp, &objval);
+        std::cout << "Objective value: " << objval << std::endl;
 
         // Print overall solution information on a .sol file
         CHECKED_CPX_CALL( CPXsolwrite, env, lp, "drill.sol" );
 
-        ///// free memory
         CPXfreeprob(env, &lp);
         CPXcloseCPLEX(&env);
+    } catch (std::exception& e) {
+        std::cerr << "Exception: " << e.what() << std::endl;
     }
-    catch(std::exception& e)
-    {
-        std::cout << ">>>EXCEPTION: " << e.what() << std::endl;
-    }
-    return 0;
+
 }
