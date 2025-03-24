@@ -3,23 +3,14 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
+#include <chrono>
 #include "cpxmacro.h"
 
 using namespace std;
 
-// error status and message buffer (from cpxmacro.h)
+// Error status and message buffer (from cpxmacro.h)
 int status;
 char errmsg[BUF_SIZE];
-
-
-// // Data
-// const int N = 4;
-
-// // Cost matrix (NxN, not NxA)
-// const double C[N][N] = { {1.0, 1.0, 1.0, 1.0},
-//                          {1.0, 1.0, 1.0, 1.0},
-//                          {1.0, 1.0, 1.0, 1.0},
-//                          {1.0, 1.0, 1.0, 1.0} };
 
 const int NAME_SIZE = 512;
 char name[NAME_SIZE];
@@ -32,6 +23,15 @@ struct Hole {
     int x, y;
 };
 
+// Function to extract filename without extension
+std::string getSolutionFilename(const std::string& boardFilename) {
+    size_t lastDot = boardFilename.find_last_of(".");
+    if (lastDot != std::string::npos) {
+        return boardFilename.substr(0, lastDot) + ".sol";  // Remove .dat and append .sol
+    }
+    return boardFilename + ".sol";  // Fallback in case there's no .dat extension
+}
+
 std::vector<Hole> readBoard(const std::string& filename) {
     std::ifstream inFile(filename);
     if (!inFile) {
@@ -40,7 +40,7 @@ std::vector<Hole> readBoard(const std::string& filename) {
     }
 
     int size;
-    inFile >> size; // Read board size (assumed square)
+    inFile >> size;  // Read board size (assumed square)
     std::vector<Hole> holes;
 
     for (int y = 0; y < size; ++y) {
@@ -48,7 +48,7 @@ std::vector<Hole> readBoard(const std::string& filename) {
             int value;
             inFile >> value;
             if (value == 1) {
-                holes.push_back({x, y}); // Store hole position
+                holes.push_back({x, y});  // Store hole position
             }
         }
     }
@@ -92,7 +92,7 @@ void setupLP(CEnv env, Prob lp, const std::vector<std::vector<double>>& C, int N
         {
             if (i == j) continue;  // Skip self-loops
 
-            char xtype = 'C'; // Fix missing semicolon
+            char xtype = 'C';
             double lb = 0.0;
             //double ub = N - 1; // x_ij <= (|N|-1)y_ij
             double ub = CPX_INFBOUND;
@@ -123,8 +123,6 @@ void setupLP(CEnv env, Prob lp, const std::vector<std::vector<double>>& C, int N
             char* yname = (char*)(&name[0]);
             CHECKED_CPX_CALL(CPXnewcols, env, lp, 1, &C[i][j], &lb, &ub, &ytype, &yname);
             map_y[i][j] = current_var_position++;
-            // 🔍 DEBUG: Print assigned variable index
-            std::cout << "Assigned y_" << i << "_" << j << " to index " << map_y[i][j] << std::endl;
         }
     }
 
@@ -259,20 +257,27 @@ int main (int argc, char const *argv[])
         setupLP(env, lp, C, holes.size()); // Pass computed cost matrix
 
         CHECKED_CPX_CALL(CPXwriteprob, env, lp, "debug_model.lp", NULL);
-        
         CHECKED_CPX_CALL(CPXsetdblparam, env, CPX_PARAM_EPRHS, 1e-9);
-        
-        //optimize
+
         std::cout << "Starting optimization..." << std::endl;
+        auto start = std::chrono::high_resolution_clock::now();
         CHECKED_CPX_CALL(CPXmipopt, env, lp);
+        auto end = std::chrono::high_resolution_clock::now();
         std::cout << "Optimization completed." << std::endl;
+
+        std::chrono::duration<double> elapsed = end - start;
+        std::cout << "Solving time: " << elapsed.count() << " seconds" << std::endl;
 
         double objval;
         CHECKED_CPX_CALL(CPXgetobjval, env, lp, &objval);
         std::cout << "Objective value: " << objval << std::endl;
 
-        // Print overall solution information on a .sol file
-        CHECKED_CPX_CALL( CPXsolwrite, env, lp, "drill.sol" );
+        // Get correct solution filename based on board file name
+        std::string solFilename = getSolutionFilename(boardFilename);
+
+        // Save solution with correct filename
+        CHECKED_CPX_CALL(CPXsolwrite, env, lp, solFilename.c_str());
+        std::cout << "Solution saved as: " << solFilename << std::endl;
 
         CPXfreeprob(env, &lp);
         CPXcloseCPLEX(&env);
@@ -280,4 +285,5 @@ int main (int argc, char const *argv[])
         std::cerr << "Exception: " << e.what() << std::endl;
     }
 
+    return 0;
 }
