@@ -259,10 +259,10 @@ int main (int argc, char const *argv[])
         CHECKED_CPX_CALL(CPXgetobjval, env, lp, &objval);
         std::cout << "Objective value: " << objval << std::endl;
 
-        // 🔹 Get correct solution filename based on board file name
+        // Get correct solution filename based on board file name
         std::string solFilename = getSolutionFilename(boardFilename);
 
-        // 🔹 Save solution with correct filename
+        // Save solution with correct filename
         CHECKED_CPX_CALL(CPXsolwrite, env, lp, solFilename.c_str());
         std::cout << "Solution saved as: " << solFilename << std::endl;
 
