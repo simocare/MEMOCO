@@ -7,20 +7,23 @@ CPX_INCDIR  = $(CPX_BASE)/cplex/include
 CPX_LIBDIR  = $(CPX_BASE)/cplex/lib/x86-64_linux/static_pic
 CPX_LDFLAGS = -lcplex -lm -pthread -ldl
 
-OBJ = main.o generate_board.o
+OBJ = main.o generate_board.o test_solver.o
 
 %.o: %.cpp
-	$(CC) $(CPPFLAGS) -I$(CPX_INCDIR) -c $< -o $@
+		$(CC) $(CPPFLAGS) -I$(CPX_INCDIR) -c $^ -o $@
+
+all: main generate_board test_solver
 
 main: main.o
-	$(CC) $(CPPFLAGS) main.o -o main.out -L$(CPX_LIBDIR) $(CPX_LDFLAGS)
+		$(CC) $(CPPFLAGS) main.o -o main.out -L$(CPX_LIBDIR) $(CPX_LDFLAGS)
 
 generate_board: generate_board.o
-	$(CC) $(CPPFLAGS) generate_board.o -o generate_board.out
+		$(CC) $(CPPFLAGS) generate_board.o -o generate_board.out
 
-all: main generate_board
+test_solver: test_solver.o
+		$(CC) $(CPPFLAGS) test_solver.o -o test_solver.out
 
 clean:
-	rm -rf $(OBJ) main.out generate_board.out
+		rm -rf $(OBJ) main.out generate_board.out test_solver.out
 
-.PHONY: clean all
+.PHONY: clean
