@@ -3,7 +3,7 @@
 *.dat
 *.sol
 *.lp
-.csv
-.txt
+*.csv
+*.txt
 .vscode/
 myenv/
