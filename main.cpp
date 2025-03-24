@@ -94,11 +94,11 @@ void setupLP(CEnv env, Prob lp, const std::vector<std::vector<double>>& C, int N
 
             char xtype = 'C';
             double lb = 0.0;
-            //double ub = N - 1; // x_ij <= (|N|-1)y_ij
             double ub = CPX_INFBOUND;
             snprintf(name, NAME_SIZE, "x_%d_%d", i, j);
             char* xname = (char*)(&name[0]);
-            CHECKED_CPX_CALL(CPXnewcols, env, lp, 1, &C[i][j], &lb, &ub, &xtype, &xname);
+            double zero = 0.0;
+            CHECKED_CPX_CALL(CPXnewcols, env, lp, 1, &zero, &lb, &ub, &xtype, &xname);
             map_x[i][j] = current_var_position++;
         }
     }
@@ -216,38 +216,25 @@ void setupLP(CEnv env, Prob lp, const std::vector<std::vector<double>>& C, int N
                 char sense = 'L';
                 int matbeg = 0;
     
-                // Debugging: Print which constraints are being added
-                std::cout << "Adding constraint: x_" << i << "_" << j << " ≤ " << (N - 1) << " * y_" << i << "_" << j << std::endl;
                 CHECKED_CPX_CALL(CPXaddrows, env, lp, 0, 1, idx.size(), &rhs, &sense, &matbeg, 
                                  idx.data(), coef.data(), NULL, NULL);
             }
         }
     }
 
-    // // Ensuring that exactly one incoming edge enters node 0
-    // std::vector<int> idx;
-    // std::vector<double> coef;
-
-    // for (int i = 1; i < N; i++) {
-    //     if (map_y[i][0] >= 0) {
-    //         idx.push_back(map_y[i][0]);
-    //         coef.push_back(1.0);
-    //     }
-    // }
-
-    // double rhs = 1.0;
-    // char sense = 'E';
-    // int matbeg = 0;
-
-    // std::cout << "Adding return-to-origin constraint (flow into node 0)" << std::endl;
-    // CHECKED_CPX_CALL(CPXaddrows, env, lp, 0, 1, idx.size(), &rhs, &sense, &matbeg, idx.data(), coef.data(), NULL, NULL);
-
     std::cout << "Finished adding constraints." << std::endl;
 }
 
 int main (int argc, char const *argv[])
 {
-    std::vector<Hole> holes = readBoard("board.dat");
+    std::string boardFilename = "board.dat";  // Default filename
+
+    // If a board filename is provided as an argument, use it
+    if (argc > 1) {
+        boardFilename = argv[1];
+    }
+
+    std::vector<Hole> holes = readBoard(boardFilename);
     std::vector<std::vector<double>> C = computeCostMatrix(holes);
 
     try {
@@ -272,10 +259,10 @@ int main (int argc, char const *argv[])
         CHECKED_CPX_CALL(CPXgetobjval, env, lp, &objval);
         std::cout << "Objective value: " << objval << std::endl;
 
-        // Get correct solution filename based on board file name
+        // 🔹 Get correct solution filename based on board file name
         std::string solFilename = getSolutionFilename(boardFilename);
 
-        // Save solution with correct filename
+        // 🔹 Save solution with correct filename
         CHECKED_CPX_CALL(CPXsolwrite, env, lp, solFilename.c_str());
         std::cout << "Solution saved as: " << solFilename << std::endl;
 
