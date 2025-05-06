@@ -163,7 +163,7 @@ void setupLP(CEnv env, Prob lp, const std::vector<std::vector<double>>& C, int N
         std::vector<int> idx;
         std::vector<double> coef;
 
-        for (int j = 1; j < N; j++) {
+        for (int j = 0; j < N; j++) {
             if (i == j) continue;
             if (map_y[i][j] >= 0) {
                 idx.push_back(map_y[i][j]);
@@ -182,7 +182,7 @@ void setupLP(CEnv env, Prob lp, const std::vector<std::vector<double>>& C, int N
         std::vector<int> idx;
         std::vector<double> coef;
 
-        for (int i = 1; i < N; i++) {
+        for (int i = 0; i < N; i++) {
             if (i == j) continue;
             if (map_y[i][j] >= 0) {
                 idx.push_back(map_y[i][j]);
