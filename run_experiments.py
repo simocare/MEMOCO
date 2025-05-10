@@ -42,7 +42,12 @@ for size in sizes:
 
             for solver_name, solver_path in solvers.items():
                 start = time.time()
-                result = subprocess.run([solver_path, fname], capture_output=True, text=True)
+                result = subprocess.run(
+                    [solver_path, fname],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    universal_newlines=True
+                )
                 end = time.time()
 
                 output = result.stdout
