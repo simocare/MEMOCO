@@ -199,14 +199,13 @@ def slider_visualization(log_file, dat_file):
 
 # --- CLI interface ---
 if __name__ == "__main__":
-    if len(sys.argv) == 3:
-        log_file = sys.argv[1]
-        dat_file = sys.argv[2]
-    elif len(sys.argv) == 2:
-        dat_file = sys.argv[1]
-        log_file = "tsp_log.txt"
+    if len(sys.argv) == 2:
+        file_name = sys.argv[1]
+        dat_file = file_name + ".dat"
+        # Get the log file name without the extension
+        log_file = file_name + "_log.txt"
     else:
-        print("Usage: python visualize_ts.py tsp_log.txt board.dat")
+        print("Usage: python visualize_ts.py board")
         sys.exit(1)
 
     slider_visualization(log_file, dat_file)
