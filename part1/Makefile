@@ -15,7 +15,7 @@ OBJ = main.o generate_board.o test_solver.o
 all: main generate_board test_solver
 
 main: main.o
-		$(CC) $(CPPFLAGS) main.o -o main.out -L$(CPX_LIBDIR) $(CPX_LDFLAGS)
+		$(CC) $(CPPFLAGS) main.o -o main_cplex.out -L$(CPX_LIBDIR) $(CPX_LDFLAGS)
 
 generate_board: generate_board.o
 		$(CC) $(CPPFLAGS) generate_board.o -o generate_board.out
@@ -24,6 +24,6 @@ test_solver: test_solver.o
 		$(CC) $(CPPFLAGS) test_solver.o -o test_solver.out
 
 clean:
-		rm -rf $(OBJ) main.out generate_board.out test_solver.out
+		rm -rf $(OBJ) main_cplex.out generate_board.out test_solver.out
 
 .PHONY: clean

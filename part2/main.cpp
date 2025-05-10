@@ -69,7 +69,7 @@ int main (int argc, char const *argv[])
     std::cout << "(value : " << tspSolver.evaluate(bestSolution,tspInstance) << ")\n";
     std::cout << "in " << (double)(tv2.tv_sec+tv2.tv_usec*1e-6 - (tv1.tv_sec+tv1.tv_usec*1e-6)) << " seconds (user time)\n";
     std::cout << "in " << (double)(t2-t1) / CLOCKS_PER_SEC << " seconds (CPU time)\n";
-    
+    std::cout << "FINAL_VALUE: " << tspSolver.evaluate(bestSolution, tspInstance) << std::endl;
   }
   catch(std::exception& e)
   {

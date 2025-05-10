@@ -257,7 +257,7 @@ int main (int argc, char const *argv[])
 
         double objval;
         CHECKED_CPX_CALL(CPXgetobjval, env, lp, &objval);
-        std::cout << "Objective value: " << objval << std::endl;
+        std::cout << "FINAL_VALUE: " << objval << std::endl;
 
         // Get correct solution filename based on board file name
         std::string solFilename = getSolutionFilename(boardFilename);
