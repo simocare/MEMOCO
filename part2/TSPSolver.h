@@ -56,8 +56,9 @@ public:
     return true;
   }
 
-  bool solve ( const TSP& tsp , const TSPSolution& initSol , int tabulength , int maxIter , TSPSolution& bestSol ); /// TS: new parameters
-protected:
+  bool solve ( const TSP& tsp , const TSPSolution& initSol , int tabulength , int maxIter , TSPSolution& bestSol, const std::string& logFileName = "tsp_log.txt"); /// TS: new parameters
+
+  protected:
   double    findBestNeighbor ( const TSP& tsp , const TSPSolution& currSol , int currIter , double aspiration , TSPMove& move );	//**// TSAC: use aspiration!
   TSPSolution&  apply2optMove        ( TSPSolution& tspSol , const TSPMove& move );
   

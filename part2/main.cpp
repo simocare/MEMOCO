@@ -26,6 +26,17 @@ int main (int argc, char const *argv[])
     /// create the instance (reading data)
     TSP tspInstance;
     tspInstance.read(argv[1]);
+
+    std::string inputFile = argv[1];
+    std::string logFileName;
+
+    size_t dotPos = inputFile.find_last_of('.');
+    if (dotPos != std::string::npos) {
+        logFileName = inputFile.substr(0, dotPos) + "_log.txt";
+    } else {
+        logFileName = inputFile + "_log.txt";
+    }
+
     TSPSolution aSolution(tspInstance);
     
     /// initialize clocks for running time recording
@@ -44,7 +55,7 @@ int main (int argc, char const *argv[])
     
     /// run the neighbourhood search
     TSPSolution bestSolution(tspInstance);
-    tspSolver.solve(tspInstance, aSolution, tabuLength, maxIterations, bestSolution);
+    tspSolver.solve(tspInstance, aSolution, tabuLength, maxIterations, bestSolution, logFileName);
     
     /// final clocks
     t2 = clock();

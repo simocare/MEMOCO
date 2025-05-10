@@ -7,14 +7,14 @@
 #include "TSPSolver.h"
 #include <iostream>
 
-bool TSPSolver::solve ( const TSP& tsp , const TSPSolution& initSol , int tabulength , int maxIter , TSPSolution& bestSol )   /// TS: new param
+bool TSPSolver::solve ( const TSP& tsp , const TSPSolution& initSol , int tabulength , int maxIter , TSPSolution& bestSol, const std::string& logFileName )
 {
   try
   {
     bool stop = false;
     int  iter = 0;
 
-    std::ofstream log("tsp_log.txt");
+    std::ofstream log(logFileName); // default log file
 
     ///Tabu Search
     tabuLength = tabulength;

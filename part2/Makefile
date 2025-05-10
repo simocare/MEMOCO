@@ -8,9 +8,9 @@ OBJ = TSPSolver.o main.o
 		$(CC) $(CPPFLAGS) -c $^ -o $@
 
 main: $(OBJ)
-		$(CC) $(CPPFLAGS) $(OBJ) -o main 
+		$(CC) $(CPPFLAGS) $(OBJ) -o main_tabu.out 
 		
 clean:
-		rm -rf $(OBJ) main
+		rm -rf $(OBJ) main_tabu.out
 
 .PHONY: clean
