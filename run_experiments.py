@@ -68,13 +68,13 @@ for size in sizes:
                     "time_sec": round(end - start, 4)
                 })
 
-    # Write intermediate results to file after each size
-    write_mode = 'w' if first_write else 'a'
-    with open(csv_filename, write_mode, newline='') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=results[0].keys())
-        if first_write:
-            writer.writeheader()
-            first_write = False
-        writer.writerows(results)
-    print(f"Results for size={size} saved to {csv_filename}")
-    results.clear()  # Clear buffer after writing
+            # Write intermediate results to file after each size
+            write_mode = 'w' if first_write else 'a'
+            with open(csv_filename, write_mode, newline='') as csvfile:
+                writer = csv.DictWriter(csvfile, fieldnames=results[0].keys())
+                if first_write:
+                    writer.writeheader()
+                    first_write = False
+                writer.writerows(results)
+            print(f"Results for size={size} saved to {csv_filename}")
+            results.clear()  # Clear buffer after writing
