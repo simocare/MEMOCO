@@ -119,7 +119,7 @@ double TSPSolver::findBestNeighbor ( const TSP& tsp , const TSPSolution& currSol
  * new incumbent solution)
  */
 {
-  double bestCostVariation = tsp.infinite;
+  double bestCostVariation = tsp.infinite; // the change in total tour cost if we apply a 2-opt move
 
   // intial and final position are fixed (initial/final node remains 0)
   for ( uint a = 1 ; a < currSol.sequence.size() - 2 ; a++ ) {
@@ -139,7 +139,10 @@ double TSPSolver::findBestNeighbor ( const TSP& tsp , const TSPSolution& currSol
         move.from = a;
         move.to = b;
       }
-			//if ( bestCostVariation < 0 ) return bestCostVariation; //*****// First Improvement variant (in this case a better way of determining the order in which neighbor are explored should be implemented)
+      //*****// First Improvement variant
+			//if ( bestCostVariation < 0 ) return bestCostVariation;
+      // If bestCostVariation < 0, that means the move improves the tour (because it's reducing the total cost).
+      //So as soon as you find a move that improves the tour, just stop searching and return it immediately.
     }
   }
   return bestCostVariation;
