@@ -28,6 +28,13 @@ public:
 
   TSPSolver ( ) { }
 
+  TSPSolver ( const std::string& logFileName = "tsp_log.txt" ) {
+    log.open(logFileName);
+    if (!log) {
+      std::cerr << "Error opening log file: " << logFileName << std::endl;
+    }
+  }
+
   double evaluate ( const TSPSolution& sol , const TSP& tsp ) const {
     double total = 0.0;
     for ( uint i = 0 ; i < sol.sequence.size() - 1 ; ++i ) {
@@ -56,16 +63,25 @@ public:
     return true;
   }
 
-  bool solve ( const TSP& tsp , const TSPSolution& initSol , int tabulength , int maxIter , TSPSolution& bestSol, const std::string& logFileName = "tsp_log.txt"); /// TS: new parameters
+  bool solve ( const TSP& tsp , const TSPSolution& initSol , int tabulength , int maxIter , TSPSolution& bestSol); /// TS: new parameters
 
-  protected:
+protected:
   double    findBestNeighbor ( const TSP& tsp , const TSPSolution& currSol , int currIter , double aspiration , TSPMove& move );	//**// TSAC: use aspiration!
   TSPSolution&  apply2optMove        ( TSPSolution& tspSol , const TSPMove& move );
+  void logLine(const std::string& line) {
+    if (log.is_open()) {
+      log << line << "\n";
+      log.flush();
+    }
+  }
   
   ///Tabu search (tabu list stores, for each node, when (last iteration) a move involving that node have been chosen)
   ///  a neighbor is tabu if the generating move involves two nodes that have been chosen in the last 'tabulength' moves
   ///  that is, currentIteration - LastTimeInvolved <= tabuLength
   int               tabuLength;
+  const int minTenure = 5;
+  const int maxTenure = 50;
+  const int noImproveThreshold = 50;
   std::vector<int>  tabuList;
   void  initTabuList ( int n ) {
     for ( int i = 0 ; i < n ; ++i ) {
@@ -80,6 +96,9 @@ public:
 	bool isTabu( int nodeFrom, int nodeTo , int iter ) {
 		return ( (iter - tabuList[nodeFrom] <= tabuLength) && (iter - tabuList[nodeTo] <= tabuLength) );
   }
+
+private:
+  std::ofstream log;
 ///
 };
 

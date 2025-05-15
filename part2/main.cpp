@@ -49,13 +49,13 @@ int main (int argc, char const *argv[])
     gettimeofday(&tv1, NULL);
     
     /// create solver class
-    TSPSolver tspSolver;
+    TSPSolver tspSolver(logFileName);
     /// initial solution (random)
     tspSolver.initRnd(aSolution);
     
     /// run the neighbourhood search
     TSPSolution bestSolution(tspInstance);
-    tspSolver.solve(tspInstance, aSolution, tabuLength, maxIterations, bestSolution, logFileName);
+    tspSolver.solve(tspInstance, aSolution, tabuLength, maxIterations, bestSolution);
     
     /// final clocks
     t2 = clock();

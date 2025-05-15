@@ -21,7 +21,7 @@ csv_filename = "benchmark_results.csv"
 first_write = True  # Track if header needs to be written
 
 # Test configurations
-sizes = [5, 10, 15, 20, 25, 30]
+sizes = [5, 10, 15, 20, 30]
 densities = [0.05, 0.1, 0.15, 0.2]
 repeats = 3
 

@@ -7,14 +7,12 @@
 #include "TSPSolver.h"
 #include <iostream>
 
-bool TSPSolver::solve ( const TSP& tsp , const TSPSolution& initSol , int tabulength , int maxIter , TSPSolution& bestSol, const std::string& logFileName )
+bool TSPSolver::solve ( const TSP& tsp , const TSPSolution& initSol , int tabulength , int maxIter , TSPSolution& bestSol)
 {
   try
   {
     bool stop = false;
     int  iter = 0;
-
-    std::ofstream log(logFileName); // default log file
 
     ///Tabu Search
     tabuLength = tabulength;
@@ -35,6 +33,10 @@ bool TSPSolver::solve ( const TSP& tsp , const TSPSolution& initSol , int tabule
     log << "\nVALUE " << currValue << "\n";
 
     TSPMove move;
+
+    const double epsilon = 0.01;
+    static int iterationsSinceImprovement = 0;
+
     while ( ! stop ) {
       ++iter;                                                                                             /// TS: iter not only for displaying
       				if ( tsp.n < 20 ) currSol.print();
@@ -46,8 +48,10 @@ bool TSPSolver::solve ( const TSP& tsp , const TSPSolution& initSol , int tabule
               log << "VALUE " << currValue << "\n";
 
 
-      double aspiration = bestValue-currValue;                                                            //**// TSAC: aspired IMPROVEMENT (to improve over bestValue)
-      double bestNeighValue = currValue + findBestNeighbor(tsp,currSol,iter,aspiration,move);             //**// TSAC: aspiration
+      double aspiration = bestValue-currValue;                                                          //**// TSAC: aspired IMPROVEMENT (to improve over bestValue)
+      double bestCostVariation = findBestNeighbor(tsp,currSol,iter,aspiration,move);
+      log << "BEST_COST_VARIATION " << bestCostVariation << "\n";
+      double bestNeighValue = currValue + bestCostVariation;                                            //**// TSAC: aspiration
       //if ( bestNeighValue < currValue ) {         /// TS: replace stopping and moving criteria
       //  bestValue = currValue = bestNeighValue;   ///
       //  currSol = apply2optMove(currSol,move);             ///
@@ -73,12 +77,28 @@ bool TSPSolver::solve ( const TSP& tsp , const TSPSolution& initSol , int tabule
 			updateTabuList(currSol.sequence[move.from],currSol.sequence[move.to],iter);	/// TS: insert move info into tabu list
 			      
 			currSol = apply2optMove(currSol,move);                                                                       /// TS: always the best move
-      currValue = bestNeighValue;                                                                         /// 
-      if ( currValue < bestValue - 0.01 ) {					/// TS: update incumbent (if better -with tolerance- solution found)
-        bestValue = currValue;                                                                            ///
-        bestSol = currSol;                                                                                ///
-        			std::cout << "\t***";                                                                       ///
-      }                                                                                                   /// 
+      currValue = bestNeighValue;
+
+      if ( currValue < bestValue - epsilon ) {					/// TS: update incumbent (if better -with tolerance- solution found)
+        bestValue = currValue;
+        bestSol = currSol;
+        			std::cout << "\t***";
+              iterationsSinceImprovement = 0;
+
+        // --- INTENSIFICATION: reduce tenure ---
+        tabuLength = std::max(minTenure, tabuLength / 2);
+        log << "\t*** (intensification, tenure = " << tabuLength << ")";
+
+      } else {
+        iterationsSinceImprovement++;
+
+        // --- DIVERSIFICATION: increase tenure if no improvement for a while ---
+        if (iterationsSinceImprovement >= noImproveThreshold) {
+          tabuLength = std::min(maxTenure, tabuLength * 2);
+          iterationsSinceImprovement = 0;
+          log << "\t(diversification, tenure = " << tabuLength << ")";
+        }
+      }
       
       if ( iter > maxIter ) {                                                                             /// TS: new stopping criteria
         stop = true;                                                                                      ///
@@ -119,6 +139,7 @@ double TSPSolver::findBestNeighbor ( const TSP& tsp , const TSPSolution& currSol
  * new incumbent solution)
  */
 {
+  logLine("entering\n");
   double bestCostVariation = tsp.infinite; // the change in total tour cost if we apply a 2-opt move
 
   // intial and final position are fixed (initial/final node remains 0)
@@ -133,12 +154,16 @@ double TSPSolver::findBestNeighbor ( const TSP& tsp , const TSPSolution& currSol
                                   + tsp.cost[h][j] + tsp.cost[i][l] ;
       if ( isTabu(i,j,currIter) && !(neighCostVariation < aspiration-0.01) ) {
         continue;             //**// TSAC: check if tabu and not aspiration criteria
+        logLine("tabu move\n");
 			}
+      log << "-> inside: " << bestCostVariation << " " << neighCostVariation << "\n";
       if ( neighCostVariation < bestCostVariation ) {
         bestCostVariation = neighCostVariation;
         move.from = a;
         move.to = b;
       }
+      // if it stays = tsp.infinite, it means that the move is not improving the tour
+
       //*****// First Improvement variant
 			//if ( bestCostVariation < 0 ) return bestCostVariation;
       // If bestCostVariation < 0, that means the move improves the tour (because it's reducing the total cost).
