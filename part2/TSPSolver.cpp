@@ -19,6 +19,7 @@ bool TSPSolver::solve ( const TSP& tsp , const TSPSolution& initSol , int tabule
     tabuList.reserve(tsp.n);
     initTabuList(tsp.n);
     ///
+    int noImproveThreshold = static_cast<int>(alpha * tsp.n);
     
     TSPSolution currSol(initSol);
     double bestValue, currValue;

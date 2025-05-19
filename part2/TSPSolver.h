@@ -81,7 +81,7 @@ protected:
   int               tabuLength;
   const int minTenure = 5;
   const int maxTenure = 50;
-  const int noImproveThreshold = 50;
+  const double alpha = 2; // TO TUNE
   std::vector<int>  tabuList;
   void  initTabuList ( int n ) {
     for ( int i = 0 ; i < n ; ++i ) {
