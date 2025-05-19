@@ -52,9 +52,9 @@ bool TSPSolver::solve ( const TSP& tsp , const TSPSolution& initSol , int tabule
       double bestCostVariation = findBestNeighbor(tsp,currSol,iter,aspiration,move);
       log << "BEST_COST_VARIATION " << bestCostVariation << "\n";
       double bestNeighValue = currValue + bestCostVariation;                                            //**// TSAC: aspiration
-      //if ( bestNeighValue < currValue ) {         /// TS: replace stopping and moving criteria
+      //if ( bestNeighValue < currValue ) {         /// TS: replace stopping and moving criteria SIMONE: too simple (it will stop too soon) -> do not use
       //  bestValue = currValue = bestNeighValue;   ///
-      //  currSol = apply2optMove(currSol,move);             ///
+      //  currSol = apply2optMove(currSol,move);    ///
       //  stop = false;                             ///
       //} else {                                    ///
       //  stop = true;                              ///
@@ -76,7 +76,7 @@ bool TSPSolver::solve ( const TSP& tsp , const TSPSolution& initSol , int tabule
       
 			updateTabuList(currSol.sequence[move.from],currSol.sequence[move.to],iter);	/// TS: insert move info into tabu list
 			      
-			currSol = apply2optMove(currSol,move);                                                                       /// TS: always the best move
+			currSol = apply2optMove(currSol,move);                                      /// TS: always the best move
       currValue = bestNeighValue;
 
       if ( currValue < bestValue - epsilon ) {					/// TS: update incumbent (if better -with tolerance- solution found)
@@ -100,13 +100,13 @@ bool TSPSolver::solve ( const TSP& tsp , const TSPSolution& initSol , int tabule
         }
       }
       
-      if ( iter > maxIter ) {                                                                             /// TS: new stopping criteria
-        stop = true;                                                                                      ///
-      }                                                                                                   ///
-      				std::cout << std::endl;
+      if ( iter > maxIter ) {                       /// TS: new stopping criteria
+        stop = true;                                ///
+      }                                             ///
+      std::cout << std::endl;
     }
     //bestSol = currSol;                            /// TS: not always the neighbor improves over 
-                                                                                                          ///     the best available (incumbent) solution 
+                                                    ///     the best available (incumbent) solution 
     log << "FINAL_SOLUTION\n";
     for (int city : bestSol.sequence) log << city << " ";
     log << "\n";
