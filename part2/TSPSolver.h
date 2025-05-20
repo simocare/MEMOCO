@@ -79,9 +79,10 @@ protected:
   ///  a neighbor is tabu if the generating move involves two nodes that have been chosen in the last 'tabulength' moves
   ///  that is, currentIteration - LastTimeInvolved <= tabuLength
   int               tabuLength;
-  const int minTenure = 5;
-  const int maxTenure = 50;
-  const double alpha = 2; // TO TUNE
+  const int minTenure = 3;    // TO TUNE (?)
+  const int maxTenure = 20;
+  double alpha = 0.75;  // affects overall stagnation threshold // TO TUNE
+  double beta = 0.5;    // ratio for tenure adaptation          // TO TUNE
   std::vector<int>  tabuList;
   void  initTabuList ( int n ) {
     for ( int i = 0 ; i < n ; ++i ) {
@@ -96,6 +97,7 @@ protected:
 	bool isTabu( int nodeFrom, int nodeTo , int iter ) {
 		return ( (iter - tabuList[nodeFrom] <= tabuLength) && (iter - tabuList[nodeTo] <= tabuLength) );
   }
+  TSPSolution applyDoubleBridgeMove(const TSPSolution& sol);
 
 private:
   std::ofstream log;
