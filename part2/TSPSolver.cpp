@@ -15,7 +15,7 @@ bool TSPSolver::solve ( const TSP& tsp , const TSPSolution& initSol , int tabule
     int  iter = 0;
 
     ///Tabu Search
-    tabuLength = tabulength;
+    tabuLength = std::max(5, tsp.n / 10);
     tabuList.reserve(tsp.n);
     initTabuList(tsp.n);
     ///
