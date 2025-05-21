@@ -8,6 +8,7 @@
 #define TSPSOLVER_H
 
 #include <vector>
+#include <algorithm>
 
 #include "TSPSolution.h"
 
@@ -18,6 +19,11 @@ typedef struct move {
   int      from;
   int      to;
 } TSPMove;
+
+struct ScoredSolution {
+    TSPSolution sol;
+    double score;
+};
 
 /**
  * Class that solves a TSP problem by neighbourdood search and 2-opt moves
@@ -66,7 +72,7 @@ public:
   bool solve ( const TSP& tsp , const TSPSolution& initSol , int tabulength , int maxIter , TSPSolution& bestSol); /// TS: new parameters
 
 protected:
-  double    findBestNeighbor ( const TSP& tsp , const TSPSolution& currSol , int currIter , double aspiration , TSPMove& move );	//**// TSAC: use aspiration!
+  double    findBestNeighbor ( const TSP& tsp , const TSPSolution& currSol , int currIter , double currValue, double bestValue, TSPMove& move );	//**// TSAC: use aspiration!
   TSPSolution&  apply2optMove        ( TSPSolution& tspSol , const TSPMove& move );
   void logLine(const std::string& line) {
     if (log.is_open()) {
@@ -79,10 +85,17 @@ protected:
   ///  a neighbor is tabu if the generating move involves two nodes that have been chosen in the last 'tabulength' moves
   ///  that is, currentIteration - LastTimeInvolved <= tabuLength
   int               tabuLength;
-  const int minTenure = 3;    // TO TUNE (?)
-  const int maxTenure = 20;
-  double alpha = 0.75;  // affects overall stagnation threshold // TO TUNE
-  double beta = 0.5;    // ratio for tenure adaptation          // TO TUNE
+  const int minTenure = 3;                                                        // TO TUNE (?)
+  const int maxTenure = 20;                 
+  double alpha = 0.75;  // affects overall stagnation threshold                   // TO TUNE
+  double beta = 0.5;    // ratio for tenure adaptation                            // TO TUNE
+  const int decayInterval = 100;                  
+  const double decayFactor = 0.9;                                                 // TO TUNE
+  const double lambda = 0.01; // penalty factor for frequency-based tabu search   // TO TUNE
+  const size_t eliteSize = 10; // number of elite solutions to keep
+  bool tenureWasAdapted = false;
+  std::vector<std::vector<double>> freq;
+  std::vector<ScoredSolution> eliteSolutions;
   std::vector<int>  tabuList;
   void  initTabuList ( int n ) {
     for ( int i = 0 ; i < n ; ++i ) {
@@ -98,6 +111,8 @@ protected:
 		return ( (iter - tabuList[nodeFrom] <= tabuLength) && (iter - tabuList[nodeTo] <= tabuLength) );
   }
   TSPSolution applyDoubleBridgeMove(const TSPSolution& sol);
+  void updateFrequencies(const TSPSolution& sol);
+  void updateEliteSolutions(const TSPSolution& currSol, const TSP& tsp);
 
 private:
   std::ofstream log;

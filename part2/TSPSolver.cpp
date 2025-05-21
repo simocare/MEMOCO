@@ -26,6 +26,12 @@ bool TSPSolver::solve ( const TSP& tsp , const TSPSolution& initSol , int tabule
     if (shakeThreshold <= tenureAdaptThreshold) {
       throw std::logic_error("shakeThreshold must be > tenureAdaptThreshold");
     }
+
+    // Initialize frequency matrix size and zero it
+    freq.clear();
+    freq.resize(tsp.n, std::vector<double>(tsp.n, 0.0));
+
+    updateEliteSolutions(initSol, tsp);
     
     TSPSolution currSol(initSol);
     double bestValue, currValue;
@@ -45,6 +51,7 @@ bool TSPSolver::solve ( const TSP& tsp , const TSPSolution& initSol , int tabule
     static int iterationsSinceImprovement = 0;
     static bool tenureIncreased = false;
     static int oldTenure = 0;
+    static int decay = decayInterval;
 
     while ( ! stop ) {
       ++iter;                                                                                             /// TS: iter not only for displaying
@@ -56,9 +63,16 @@ bool TSPSolver::solve ( const TSP& tsp , const TSPSolution& initSol , int tabule
       log << "\n";
       log << "VALUE -> " << currValue << "\n";
 
+      // FREQUENCY PENALTY UPDATE
+      decay --;
+      if (tenureWasAdapted || decay <= 0) {
+        decay = decayInterval;
+        updateFrequencies(currSol);
+        tenureWasAdapted = false;
+      }
+      
 
-      double aspiration = bestValue-currValue;                                                          //**// TSAC: aspired IMPROVEMENT (to improve over bestValue)
-      double bestCostVariation = findBestNeighbor(tsp,currSol,iter,aspiration,move);
+      double bestCostVariation = findBestNeighbor(tsp,currSol,iter,currValue,bestValue,move);
       double printableVariation = std::abs(bestCostVariation) < 1e-10 ? 0.0 : bestCostVariation;
       log << "BEST_COST_VARIATION " << printableVariation << "\n";
       double bestNeighValue = currValue + bestCostVariation;                                            //**// TSAC: aspiration
@@ -79,10 +93,6 @@ bool TSPSolver::solve ( const TSP& tsp , const TSPSolution& initSol , int tabule
       
       std::cout << "\tmove: " << move.from << " , " << move.to;       // NEXT MOVE that we are going to apply after the current iteration
       log << "MOVE " << move.from << " , " << move.to << "\n";
-
-      if ( currValue < bestValue - 0.01 ) {
-        log << "ASPIRATION_ACCEPTED\n";
-      }
       
 			updateTabuList(currSol.sequence[move.from],currSol.sequence[move.to],iter);	/// TS: insert move info into tabu list
 			      
@@ -90,11 +100,13 @@ bool TSPSolver::solve ( const TSP& tsp , const TSPSolution& initSol , int tabule
       currValue = bestNeighValue;
       oldTenure = tabuLength;
 
-      log << "currValue " << currValue << "bestValue " << bestValue << "\n";
+      log << "currValue " << currValue << " bestValue " << bestValue << "\n";
       if ( currValue < bestValue - epsilon ) {					/// TS: update incumbent (if better -with tolerance- solution found)
         bestValue = currValue;
         bestSol = currSol;
         std::cout << "\t***";
+        log << "NEW INCUMBENT accepted -> " << bestValue << "\n";
+        updateEliteSolutions(currSol, tsp);                       // Maybe insert the current solution into elite solutions
         iterationsSinceImprovement = 0;
         tenureIncreased = false;
 
@@ -111,18 +123,30 @@ bool TSPSolver::solve ( const TSP& tsp , const TSPSolution& initSol , int tabule
           tabuLength = std::min(maxTenure, tabuLength * 2);
           tenureIncreased = true;
           log << "\t(diversification, tenure: " << oldTenure << " -> " << tabuLength << ")\n";
+          tenureWasAdapted = true;
         }
 
         if (iterationsSinceImprovement >= shakeThreshold) {
-        // --- DOUBLE BRIDGE MOVE or REINITIALIZATION - SHAKING ---
-          currSol = applyDoubleBridgeMove(currSol);
-          currValue = evaluate(currSol, tsp);
-          iterationsSinceImprovement = 0; // Reset: gives time to explore new area
-          tenureIncreased = false;
+          bool useElite = (!eliteSolutions.empty() && rand() % 2 == 0);
 
-          log << "\t shakeThreshold " << shakeThreshold << "\n";
-          log << "\t(shaking applied: double-bridge move)\n";
-          std::cout << "\t Shaking: double-bridge move applied" << std::endl;
+          if (useElite) {
+            // --- ELITE INTENSIFICATION: Restart from one of the best solutions
+            currSol = eliteSolutions[rand() % eliteSolutions.size()].sol;
+            currValue = evaluate(currSol, tsp);
+            log << "\t shakeThreshold " << shakeThreshold << "\n";
+            log << "\t(Elite intensification: restarting from elite)\n";
+            std::cout << "\t Intensification: restarting from elite solution" << std::endl;
+          } else {
+            // --- DIVERSIFICATION: Double-bridge shaking
+            currSol = applyDoubleBridgeMove(currSol);
+            currValue = evaluate(currSol, tsp);
+            log << "\t shakeThreshold " << shakeThreshold << "\n";
+            log << "\t(shaking applied: double-bridge move)\n";
+            std::cout << "\t Shaking: double-bridge move applied" << std::endl;
+          }
+
+          iterationsSinceImprovement = 0;
+          tenureIncreased = false;
         }
       }
       
@@ -157,7 +181,7 @@ TSPSolution& TSPSolver::apply2optMove ( TSPSolution& tspSol , const TSPMove& mov
   return tspSol;
 }
 
-double TSPSolver::findBestNeighbor ( const TSP& tsp , const TSPSolution& currSol , int currIter , double aspiration , TSPMove& move )     //**// TSAC: use aspiration
+double TSPSolver::findBestNeighbor ( const TSP& tsp , const TSPSolution& currSol , int currIter , double currValue, double bestValue , TSPMove& move )     //**// TSAC: use aspiration
 /* Determine the NON-TABU *move* yielding the best 2-opt neigbor solution 
  * Aspiration criteria: 'neighCostVariation' better than 'aspiration' (notice that 'aspiration'
  * has been set such that if 'neighCostVariation' is better than 'aspiration' than we have a
@@ -174,13 +198,35 @@ double TSPSolver::findBestNeighbor ( const TSP& tsp , const TSPSolution& currSol
     for ( uint b = a + 1 ; b < currSol.sequence.size() - 1 ; b++ ) {
       int j = currSol.sequence[b];
       int l = currSol.sequence[b+1];
+      double freqPenalty = lambda * (freq[i][j] + freq[h][i] + freq[j][l]);
 			//**// TSAC: to be checked after... if (isTabu(i,j,currIter)) continue;						/// TS: tabu check (just one among many ways of doing it...) 
       double neighCostVariation = - tsp.cost[h][i] - tsp.cost[j][l]
-                                  + tsp.cost[h][j] + tsp.cost[i][l] ;
-      if ( isTabu(i,j,currIter) && !(neighCostVariation < aspiration-0.01) ) {
-        continue;             //**// TSAC: check if tabu and not aspiration criteria
-        logLine("tabu move\n");
-			}
+                                  + tsp.cost[h][j] + tsp.cost[i][l]
+                                  + freqPenalty;
+
+      double newValue = currValue + neighCostVariation;
+      bool tabu = isTabu(i, j, currIter);
+      bool aspirationOk = newValue < bestValue - 0.01;
+
+      log << "[NEIGHBOR] i=" << i << " j=" << j
+      << "  neighCostVar=" << neighCostVariation
+      << "  newValue=" << newValue
+      << "  bestValue=" << bestValue
+      << "  isTabu=" << (tabu ? "YES" : "NO")
+      << (tabu && aspirationOk ? " (ASPIRATION)\n" : "\n");
+
+      if (tabu && !aspirationOk) {
+          log << "[TABU BLOCKED] i=" << i << " j=" << j
+          << "  variation=" << neighCostVariation
+          << " → new value = " << newValue
+          << " not < bestValue = " << bestValue << "\n";
+          continue;
+      }
+
+      if (tabu && aspirationOk) {
+          log << "ASPIRATION ACCEPTED";
+      }
+
       //log << "-> inside: " << bestCostVariation << " " << neighCostVariation << "\n";
       if ( neighCostVariation < bestCostVariation ) {
         bestCostVariation = neighCostVariation;
@@ -227,4 +273,34 @@ TSPSolution TSPSolver::applyDoubleBridgeMove(const TSPSolution& sol) {
     newSol.sequence.insert(newSol.sequence.end(), segment5.begin(), segment5.end());
 
     return newSol;
+}
+
+void TSPSolver::updateFrequencies(const TSPSolution& sol) {
+    int n = sol.sequence.size() - 1; // exclude the last duplicated 0
+    for (int k = 0; k < n; ++k) {
+        int a = sol.sequence[k];
+        int b = sol.sequence[k + 1];
+        freq[a][b] += 1.0;
+    }
+}
+
+void TSPSolver::updateEliteSolutions(const TSPSolution& currSol, const TSP& tsp) {
+    double currScore = evaluate(currSol, tsp);
+
+    // If not yet full, just insert
+    if (eliteSolutions.size() < eliteSize) {
+        eliteSolutions.push_back({currSol, currScore});
+        return;
+    }
+
+    // Find the worst — the element with maximum score (value)
+    auto worstIt = std::max_element(eliteSolutions.begin(), eliteSolutions.end(),
+        [](const ScoredSolution& a, const ScoredSolution& b) {
+            return a.score < b.score;
+        });
+
+    // Replace worst if current is better
+    if (currScore < worstIt->score) {
+        *worstIt = {currSol, currScore};
+    }
 }
