@@ -9,6 +9,13 @@
 
 bool TSPSolver::solve ( const TSP& tsp , const TSPSolution& initSol , int tabulength , int maxIter , TSPSolution& bestSol)
 {
+  // debug arguments
+  log << "Arguments: " << std::endl;
+  log << "alpha: " << alpha << std::endl;
+  log << "beta: " << beta << std::endl;
+  log << "decayFactor: " << decayFactor << std::endl;
+  log << "lambda: " << lambda << std::endl;
+  log << "----------------------------------------" << std::endl;
   try
   {
     bool stop = false;

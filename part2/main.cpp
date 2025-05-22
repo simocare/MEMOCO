@@ -21,7 +21,29 @@ int main (int argc, char const *argv[])
 {
   try
   {
-    if (argc < 2) throw std::runtime_error("usage: ./main filename.dat");
+    if (argc < 2) throw std::runtime_error("usage: ./main filename.dat [--alpha=0.7 --beta=0.5 --decayFactor=0.9 --lambda=0.01]");
+
+    // Default parameters
+    double alpha = 0.75;
+    double beta = 0.5;
+    double decayFactor = 0.9;
+    double lambda = 0.01;
+
+    // parsing
+    for (int i = 2; i < argc; ++i) {
+      std::string arg = argv[i];
+      if (arg.find("--alpha=") == 0) {
+        alpha = std::stod(arg.substr(8));
+      } else if (arg.find("--beta=") == 0) {
+        beta = std::stod(arg.substr(7));
+      } else if (arg.find("--decayFactor=") == 0) {
+        decayFactor = std::stod(arg.substr(14));
+      } else if (arg.find("--lambda=") == 0) {
+        lambda = std::stod(arg.substr(9));
+      } else {
+        std::cerr << "Warning: Unknown parameter: " << arg << std::endl;
+      }
+    }
     
     /// create the instance (reading data)
     TSP tspInstance;
@@ -49,7 +71,7 @@ int main (int argc, char const *argv[])
     gettimeofday(&tv1, NULL);
     
     /// create solver class
-    TSPSolver tspSolver(logFileName);
+    TSPSolver tspSolver(logFileName, alpha, beta, decayFactor, lambda);
     /// initial solution (random)
     tspSolver.initRnd(aSolution);
     

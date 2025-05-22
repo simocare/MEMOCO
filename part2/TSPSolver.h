@@ -34,7 +34,8 @@ public:
 
   TSPSolver ( ) { }
 
-  TSPSolver ( const std::string& logFileName = "tsp_log.txt" ) {
+  TSPSolver ( const std::string& logFileName = "tsp_log.txt" , double alpha = 0.75 , double beta = 0.5 , double decayFactor = 0.9 , double lambda = 0.01 ) :
+    alpha(alpha), beta(beta), decayFactor(decayFactor), lambda(lambda) {
     log.open(logFileName);
     if (!log) {
       std::cerr << "Error opening log file: " << logFileName << std::endl;
