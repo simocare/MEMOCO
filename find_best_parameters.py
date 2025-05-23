@@ -101,3 +101,6 @@ for size in sizes:
                     writer.writerow(best_result)
 
                 print(f"Best tuning result for size={size}, density={density}, repeat={r} saved.")
+
+            # Clean up generated files
+            os.remove(original_fname)
