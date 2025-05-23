@@ -34,24 +34,26 @@ for size in sizes:
             continue
 
         for r in range(repeats):
-            original_fname = f"{output_dir}/board_{size}_{num_holes}_{r}.dat"
-            subprocess.run([generator_exe, str(size), str(num_holes), original_fname], check=True)
+            original_board_fname = f"{output_dir}/board_{size}_{num_holes}_{r}.dat"
+            subprocess.run([generator_exe, str(size), str(num_holes), original_board_fname], check=True)
 
             best_result = None
             best_cost = float("inf")
+            log_files_to_clean = []
 
             for idx, (alpha, beta, decay_factor, lamb) in enumerate(itertools.product(alphas, betas, decay_factors, lambdas)):
-                temp_fname = f"{output_dir}/board_{size}_{num_holes}_{r}_run{idx}.dat"
 
-                shutil.copy(original_fname, temp_fname)
+                current_log_fname = f"{output_dir}/board_{size}_{num_holes}_{r}_run{idx}_log.txt"
+                log_files_to_clean.append(current_log_fname) # Add to cleanup list
 
                 args = [
                     solver_path,
-                    temp_fname,
+                    original_board_fname, # Pass the original board file
                     f"--alpha={alpha}",
                     f"--beta={beta}",
                     f"--decayFactor={decay_factor}",
-                    f"--lambda={lamb}"
+                    f"--lambda={lamb}",
+                    f"--logFile={current_log_fname}" # Tell the solver where to write its log
                 ]
 
                 start = time.time()
@@ -62,7 +64,7 @@ for size in sizes:
                     universal_newlines=True
                 )
                 if result.returncode != 0:
-                    print(f"Solver failed for {temp_fname} with parameters: alpha={alpha}, beta={beta}, decayFactor={decay_factor}, lambda={lamb}")
+                    print(f"Solver failed for {original_board_fname} with parameters: alpha={alpha}, beta={beta}, decayFactor={decay_factor}, lambda={lamb}")
                     print("stderr:", result.stderr)
                     continue
                 end = time.time()
@@ -85,10 +87,14 @@ for size in sizes:
                         "lambda": lamb,
                         "final_cost": final_cost,
                         "time_sec": round(end - start, 4),
-                        "filename": temp_fname
+                        "filename": original_board_fname,
                     }
 
-                os.remove(temp_fname)
+            # Clean up all log files for this specific board/repeat after all parameter tunings
+            for log_file in log_files_to_clean:
+                if os.path.exists(log_file):
+                    os.remove(log_file)
+            log_files_to_clean.clear()
 
             # Write only best_result for this repeat
             if best_result:
@@ -103,4 +109,5 @@ for size in sizes:
                 print(f"Best tuning result for size={size}, density={density}, repeat={r} saved.")
 
             # Clean up generated files
-            os.remove(original_fname)
+            if os.path.exists(original_board_fname):
+                os.remove(original_board_fname)

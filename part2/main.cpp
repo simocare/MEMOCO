@@ -21,13 +21,14 @@ int main (int argc, char const *argv[])
 {
   try
   {
-    if (argc < 2) throw std::runtime_error("usage: ./main filename.dat [--alpha=0.7 --beta=0.5 --decayFactor=0.9 --lambda=0.01]");
+    if (argc < 2) throw std::runtime_error("usage: ./main filename.dat [--alpha=0.7 --beta=0.5 --decayFactor=0.9 --lambda=0.01 --logFile=log.txt]");
 
     // Default parameters
     double alpha = 0.75;
     double beta = 0.5;
     double decayFactor = 0.9;
     double lambda = 0.01;
+    std::string logFileName = ""; // Default empty, will be set from argument or derived
 
     // parsing
     for (int i = 2; i < argc; ++i) {
@@ -40,6 +41,8 @@ int main (int argc, char const *argv[])
         decayFactor = std::stod(arg.substr(14));
       } else if (arg.find("--lambda=") == 0) {
         lambda = std::stod(arg.substr(9));
+      } else if (arg.find("--logFile=") == 0) {
+        logFileName = arg.substr(10);
       } else {
         std::cerr << "Warning: Unknown parameter: " << arg << std::endl;
       }
@@ -49,14 +52,15 @@ int main (int argc, char const *argv[])
     TSP tspInstance;
     tspInstance.read(argv[1]);
 
-    std::string inputFile = argv[1];
-    std::string logFileName;
-
-    size_t dotPos = inputFile.find_last_of('.');
-    if (dotPos != std::string::npos) {
-        logFileName = inputFile.substr(0, dotPos) + "_log.txt";
-    } else {
-        logFileName = inputFile + "_log.txt";
+    // If --logFile was not provided, derive it from the input filename
+    if (logFileName.empty()) {
+      std::string inputFile = argv[1];
+      size_t dotPos = inputFile.find_last_of('.');
+      if (dotPos != std::string::npos) {
+          logFileName = inputFile.substr(0, dotPos) + "_log.txt";
+      } else {
+          logFileName = inputFile + "_log.txt";
+      }
     }
 
     TSPSolution aSolution(tspInstance);
