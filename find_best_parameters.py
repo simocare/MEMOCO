@@ -39,12 +39,12 @@ for size in sizes:
 
             best_result = None
             best_cost = float("inf")
-            #log_files_to_clean = []
+            log_files_to_clean = []
 
             for idx, (alpha, beta, decay_factor, lamb) in enumerate(itertools.product(alphas, betas, decay_factors, lambdas)):
 
                 current_log_fname = f"{output_dir}/board_{size}_{num_holes}_{r}_run{idx}_log.txt"
-                #log_files_to_clean.append(current_log_fname) # Add to cleanup list
+                log_files_to_clean.append(current_log_fname) # Add to cleanup list
 
                 args = [
                     solver_path,
@@ -91,10 +91,10 @@ for size in sizes:
                     }
 
             # Clean up all log files for this specific board/repeat after all parameter tunings
-            # for log_file in log_files_to_clean:
-            #     if os.path.exists(log_file):
-            #         os.remove(log_file)
-            # log_files_to_clean.clear()
+            for log_file in log_files_to_clean:
+                if os.path.exists(log_file):
+                    os.remove(log_file)
+            log_files_to_clean.clear()
 
             # Write only best_result for this repeat
             if best_result:
@@ -109,5 +109,5 @@ for size in sizes:
                 print(f"Best tuning result for size={size}, density={density}, repeat={r} saved.")
 
             # Clean up generated files
-            # if os.path.exists(original_board_fname):
-            #     os.remove(original_board_fname)
+            if os.path.exists(original_board_fname):
+                os.remove(original_board_fname)

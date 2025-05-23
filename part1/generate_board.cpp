@@ -1,3 +1,4 @@
+#include "generate_board.h"
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -36,17 +37,17 @@ void generateBoard(int size, int num_holes, const std::string& filename) {
     std::cout << "Board saved to " << filename << std::endl;
 }
 
-int main(int argc, char* argv[]) {
-    if (argc < 3 || argc > 4) { // Allow 3 or 4 arguments
-        std::cerr << "Usage: " << argv[0] << " <size> <num_holes> [output_filename]" << std::endl;
-        return 1;
-    }
+// int main(int argc, char* argv[]) {
+//     if (argc < 3 || argc > 4) { // Allow 3 or 4 arguments
+//         std::cerr << "Usage: " << argv[0] << " <size> <num_holes> [output_filename]" << std::endl;
+//         return 1;
+//     }
     
-    int size = std::stoi(argv[1]);
-    int num_holes = std::stoi(argv[2]);
+//     int size = std::stoi(argv[1]);
+//     int num_holes = std::stoi(argv[2]);
 
-    std::string filename = (argc == 4) ? argv[3] : "board.dat"; // Use provided filename or default
+//     std::string filename = (argc == 4) ? argv[3] : "board.dat"; // Use provided filename or default
 
-    generateBoard(size, num_holes, filename);
-    return 0;
-}
+//     generateBoard(size, num_holes, filename);
+//     return 0;
+// }

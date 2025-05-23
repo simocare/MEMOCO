@@ -63,7 +63,6 @@ bool TSPSolver::solve ( const TSP& tsp , const TSPSolution& initSol , int tabule
     while ( ! stop ) {
       ++iter;                                                                                             /// TS: iter not only for displaying
       if ( tsp.n < 20 ) currSol.print();
-      std::cout << " (" << iter << "ac) value " << currValue << "\t(" << evaluate(currSol,tsp) << ")";
       log << "ITERATION " << iter << "\n";
       log << "TOUR ";
       for (int city : currSol.sequence) log << city << " ";
