@@ -1,4 +1,5 @@
 import itertools
+import shutil
 import subprocess
 import os
 import csv
@@ -42,7 +43,7 @@ for size in sizes:
             for idx, (alpha, beta, decay_factor, lamb) in enumerate(itertools.product(alphas, betas, decay_factors, lambdas)):
                 temp_fname = f"{output_dir}/board_{size}_{num_holes}_{r}_run{idx}.dat"
 
-                os.rename(original_fname, temp_fname)
+                shutil.copy(original_fname, temp_fname)
 
                 args = [
                     solver_path,
@@ -60,6 +61,10 @@ for size in sizes:
                     stderr=subprocess.PIPE,
                     universal_newlines=True
                 )
+                if result.returncode != 0:
+                    print(f"Solver failed for {temp_fname} with parameters: alpha={alpha}, beta={beta}, decayFactor={decay_factor}, lambda={lamb}")
+                    print("stderr:", result.stderr)
+                    continue
                 end = time.time()
 
                 output = result.stdout
@@ -83,7 +88,7 @@ for size in sizes:
                         "filename": temp_fname
                     }
 
-                os.rename(temp_fname, original_fname)
+                os.remove(temp_fname)
 
             # Write only best_result for this repeat
             if best_result:
