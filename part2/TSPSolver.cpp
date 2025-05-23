@@ -215,12 +215,12 @@ double TSPSolver::findBestNeighbor ( const TSP& tsp , const TSPSolution& currSol
       bool tabu = isTabu(i, j, currIter);
       bool aspirationOk = newValue < bestValue - 0.01;
 
-      log << "[NEIGHBOR] i=" << i << " j=" << j
-      << "  neighCostVar=" << neighCostVariation
-      << "  newValue=" << newValue
-      << "  bestValue=" << bestValue
-      << "  isTabu=" << (tabu ? "YES" : "NO")
-      << (tabu && aspirationOk ? " (ASPIRATION)\n" : "\n");
+      // log << "[NEIGHBOR] i=" << i << " j=" << j
+      // << "  neighCostVar=" << neighCostVariation
+      // << "  newValue=" << newValue
+      // << "  bestValue=" << bestValue
+      // << "  isTabu=" << (tabu ? "YES" : "NO")
+      // << (tabu && aspirationOk ? " (ASPIRATION)\n" : "\n");
 
       if (tabu && !aspirationOk) {
           log << "[TABU BLOCKED] i=" << i << " j=" << j
