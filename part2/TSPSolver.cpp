@@ -287,7 +287,7 @@ void TSPSolver::updateFrequencies(const TSPSolution& sol) {
     for (int k = 0; k < n; ++k) {
         int a = sol.sequence[k];
         int b = sol.sequence[k + 1];
-        freq[a][b] += 1.0;
+        freq[a][b] += decayFactor;
     }
 }
 
