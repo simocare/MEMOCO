@@ -8,10 +8,9 @@
 #include <cstdlib>
 #include <cstdio>
 #include <chrono>
-#include <filesystem>
 #include <array>
-
-namespace fs = std::filesystem;
+#include <sys/stat.h>
+#include <sys/types.h>
 
 struct Params {
     double alpha;
@@ -19,6 +18,25 @@ struct Params {
     double decayFactor;
     double lambda;
 };
+
+bool create_directory(const std::string& dir) {
+    struct stat st;
+    if (stat(dir.c_str(), &st) != 0) {
+        if (mkdir(dir.c_str(), 0755) != 0) {
+            std::cerr << "Could not create directory: " << dir << std::endl;
+            return false;
+        }
+    } else if (!S_ISDIR(st.st_mode)) {
+        std::cerr << dir << " exists but is not a directory!" << std::endl;
+        return false;
+    }
+    return true;
+}
+
+bool file_exists(const std::string& filename) {
+    struct stat buffer;
+    return (stat(filename.c_str(), &buffer) == 0);
+}
 
 // Load best parameters for each (size, density)
 std::map<std::pair<int, double>, Params> loadBestParams(const std::string& csv_filename) {
@@ -87,7 +105,11 @@ int main() {
     std::string output_dir = "experiments";
     std::string result_csv = "benchmark_results.csv";
 
-    fs::create_directory(output_dir);
+    if (!create_directory(output_dir)) {
+        std::cerr << "Failed to create output directory, exiting." << std::endl;
+        return 1;
+    }
+
     auto bestParams = loadBestParams(param_csv);
 
     bool first_write = true;
@@ -121,7 +143,10 @@ int main() {
                     outfile.open(result_csv, std::ios::app);
                 }
 
-                for (const auto& [solver_name, solver_exec] : solvers) {
+                for (const auto& solver : solvers) {
+                    const std::string& solver_name = solver.first;
+                    const std::string& solver_exec = solver.second;
+
                     std::string cmd = solver_exec + " " + fname;
 
                     if (solver_name == "tabu") {
@@ -133,7 +158,6 @@ int main() {
                                    " --decayFactor=" + std::to_string(p.decayFactor) +
                                    " --lambda=" + std::to_string(p.lambda);
 
-                            // Debug print of parameters used
                             std::cout << "[DEBUG] Running 'tabu' with params: "
                                       << "alpha=" << p.alpha << ", "
                                       << "beta=" << p.beta << ", "
@@ -151,17 +175,14 @@ int main() {
                     auto end = std::chrono::high_resolution_clock::now();
                     std::chrono::duration<double> elapsed = end - start;
 
-                    std::string final_line;
+                    double final_cost = -1.0;
                     std::istringstream iss(output);
                     std::string line;
-                    double final_cost = -1.0;
-
                     while (std::getline(iss, line)) {
                         if (line.rfind("FINAL_VALUE", 0) == 0) {
-                            final_line = line;
-                            size_t pos = final_line.find(":");
+                            size_t pos = line.find(":");
                             if (pos != std::string::npos) {
-                                final_cost = std::stod(final_line.substr(pos + 1));
+                                final_cost = std::stod(line.substr(pos + 1));
                             }
                             break;
                         }
