@@ -2,19 +2,26 @@ CXX = g++
 CXXFLAGS = -Wall -O2 -g
 INCLUDE_PATHS = -I. -Ipart1 -Ipart2
 
-OBJS = find_best_parameters.o \
-       part1/generate_board.o \
-       part2/TSPSolver.o
+OBJS_FIND = find_best_parameters.o \
+            part1/generate_board.o \
+            part2/TSPSolver.o
 
-OUT = find_best_parameters.out
+OBJS_RUN = run_experiments.o \
+           part1/generate_board.o \
+           part2/TSPSolver.o
 
-all: $(OUT)
+OUT_FIND = find_best_parameters.out
+OUT_RUN = run_experiments.out
 
-$(OUT): $(OBJS)
+all: $(OUT_FIND) $(OUT_RUN)
+$(OUT_FIND): $(OBJS_FIND)
+	$(CXX) $(CXXFLAGS) $(INCLUDE_PATHS) -o $@ $^
+
+$(OUT_RUN): $(OBJS_RUN)
 	$(CXX) $(CXXFLAGS) $(INCLUDE_PATHS) -o $@ $^
 
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDE_PATHS) -c $< -o $@
 
 clean:
-	rm -f $(OBJS) $(OUT)
+	rm -f $(OBJS_FIND) $(OBJS_RUN) $(OUT_FIND) $(OUT_RUN)
