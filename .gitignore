@@ -8,4 +8,4 @@
 *.png
 .vscode/
 myenv/
-.pdf
+*.pdf
