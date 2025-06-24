@@ -24,16 +24,13 @@ const std::vector<double> DENSITIES = {0.05, 0.1, 0.15, 0.2};
 const int REPEATS = 3;
 
 //const std::vector<double> ALPHAS = {0.5, 0.75, 1.0}; 1)
-//const std::vector<double> ALPHAS = {0.25, 0.5, 0.75};2)
-
 //const std::vector<double> BETAS = {0.3, 0.5, 0.7};   1)
-//const std::vector<double> BETAS = {0.15, 0.4, 0.7};  2)
 
 // const std::vector<double> ALPHAS = {0.15, 0.35, 0.5};
 // const std::vector<double> BETAS = {0.1, 0.3, 0.5};
 
 //24 / 06
-const std::vector<double> ALPHAS = {0.2, 0.3, 0.4};
+const std::vector<double> ALPHAS = {0.2, 0.4, 0.6};
 const std::vector<double> BETAS = {0.3};
 
 const std::vector<double> DECAY_FACTORS = {0.85, 0.9, 0.95};
