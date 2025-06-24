@@ -207,7 +207,6 @@ These components work together to form a reactive and adaptive Tabu Search, capa
 
 == Results
 === Parameters Tuning
-3.4 Parameter Tuning
 
 To improve the performance of the Tabu Search algorithm across a wide range of instance sizes and densities, a parameter tuning phase was conducted. The following parameters were tuned:
 
