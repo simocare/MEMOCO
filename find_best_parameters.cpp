@@ -29,9 +29,9 @@ const int REPEATS = 3;
 // const std::vector<double> ALPHAS = {0.15, 0.35, 0.5};
 // const std::vector<double> BETAS = {0.1, 0.3, 0.5};
 
-//24 / 06
-const std::vector<double> ALPHAS = {0.2, 0.4, 0.6};
-const std::vector<double> BETAS = {0.3};
+//24 / 06 -> partendo da 1) spostiamo un po' i valori di alpha e beta verso il basso
+const std::vector<double> ALPHAS = {0.35, 0.5, 0.75};
+const std::vector<double> BETAS = {0.2, 0.3, 0.5};
 
 const std::vector<double> DECAY_FACTORS = {0.85, 0.9, 0.95};
 const std::vector<double> LAMBDAS = {0.0, 0.01, 0.05};
