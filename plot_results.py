@@ -24,14 +24,13 @@ df_summary = pd.read_csv(input_file)
 
 # === Plot Gap Percentage ===
 plt.figure(figsize=(12, 6))
-sns.lineplot(data=df_summary, x="size", y="gap_percent", hue="density", marker="o")
+sns.lineplot(data=df_summary, x="size", y="gap_percent_mean", hue="density", marker="o")
 plt.title("Tabu Gap Percentage Compared to CPLEX")
 plt.xlabel("Board Size")
 plt.ylabel("Gap (%)")
 plt.tight_layout()
 gap_plot_path = os.path.splitext(input_file)[0] + "_gap_percent_plot.png"
 plt.savefig(gap_plot_path)
-plt.close()
 plt.close()
 
 # === Load raw benchmark results for timing ===
@@ -46,6 +45,4 @@ plt.xlabel("Board Size")
 plt.tight_layout()
 runtime_plot_path = os.path.splitext(input_file)[0] + "_runtime_plot.png"
 plt.savefig(runtime_plot_path)
-plt.close()
-plt.savefig("runtime_plot.png")
 plt.close()

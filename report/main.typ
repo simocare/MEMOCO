@@ -24,7 +24,6 @@
 #set math.equation(numbering: "(1.1)")
 
 = Introduction
-// This report investigates the application of both exact and heuristic methods to the Traveling Salesman Problem (TSP), modeled after an industrial scenario involving printed circuit board (PCB) drilling. The goal is to find the shortest path for a drill to visit all holes on a grid-like board and return to the starting point. Two solution strategies are explored: an exact solver based on the CPLEX API and a heuristic approach using a highly customizable Tabu Search (TS) algorithm
 
 This project addresses an optimization problem arising in the manufacturing of printed circuit boards (PCBs). Each board contains a set of holes that must be drilled, and the drill head must move across the board to reach all positions before returning to the starting point. Since the layout is repeated over many boards, minimizing the travel path can significantly reduce production time and increase efficiency.
 
@@ -53,36 +52,19 @@ Formally, the problem can be represented on a complete weighted graph $G = (N, A
 
 - *Decision Variables*:
 
-  $x_(i j) \in bb(R)^+$: flow of a fictitious commodity from node $i$ to node $j$
+  $x_(i j) in bb(R)^+$: flow of a fictitious commodity from node $i$ to node $j$
   
-  $y_(i j) \in {0,1}$: equals 1 if arc $(i,j)$ is used in the tour, 0 otherwise
+  $y_(i j) in {0,1}$: equals 1 if arc $(i,j)$ is used in the tour, 0 otherwise
+
+#pagebreak()
 
 - *MILP Formulation*:
 
 $
-min sum_((i, j) in A) c_(i j) y_(i j)
+min sum_(i,j:(i, j) in A) c_(i j) y_(i j)
 $
 
 subject to:
-
-//TODO : CONTROLLARE LE FORMULE
-
-// #mitex(`
-// \begin{align}
-// \sum_{i : (i,k) \in A} x_{ik} - \sum_{j : (k,j) \in A,\, j \neq 0} x_{kj} &= 1 
-//   &&\quad \forall k \in N \setminus \{0\} \tag{2} \\
-// \sum_{j : (i,j) \in A} y_{ij} &= 1 
-//   &&\quad \forall i \in N \tag{3} \\
-// \sum_{i : (i,j) \in A} y_{ij} &= 1 
-//   &&\quad \forall j \in N \tag{4} \\
-// x_{ij} &\leq (|N| - 1) y_{ij} 
-//   &&\quad \forall (i,j) \in A,\, j \neq 0 \tag{5} \\
-// x_{ij} &\in \mathbb{R}^+ 
-//   &&\quad \forall (i,j) \in A,\, j \neq 0 \tag{6} \\
-// y_{ij} &\in \{0, 1\} 
-//   &&\quad \forall (i,j) \in A \tag{7}
-// \end{align}
-// `)<constraints>
 
 $
 sum_(i :(i, k) in A) x_(i k) - sum_(j :(k, j) in A, thin j != 0) x_(k j) &= 1
@@ -111,7 +93,7 @@ Boards are generated randomly based on two parameters: the board size and a dens
 To avoid trivial instances and reduce solving times for the exact model, only boards with at least 3 holes and at most 60% filled cells are considered. The generated files follow a naming convention that encodes the size, density, and repetition index of the instance, enabling automated retrieval of tuned parameters and results.
 
 == Input representation
-All instances are based on square boards, represented as $s times s$ grids. Each board is stored in a `.dat` file, where the first line contains the board size $s$, followed by a matrix of 0s and 1s. A value of `1` indicates the presence of a hole, while `0` denotes an empty cell.
+All instances are based on square boards, represented as $s times s$ grids. Each board is stored in a '`.dat`' file, where the first line contains the board size $s$, followed by a matrix of 0s and 1s. A value of `1` indicates the presence of a hole, while `0` denotes an empty cell.
 
 == Instance generation
 The generation of input instances is handled via a C++ routine that produces random square drill boards of variable size and density. Each instance corresponds to a grid of size $s times s$, where a set number of holes is randomly placed according to a specified density parameter.
@@ -143,6 +125,12 @@ Constraints are then added to the model in three groups:
 Each group of constraints is encoded by creating sparse row representations and passed to *`CPXaddrows`* in batch. Names and bounds for variables and constraints are generated using standard string formatting. The macros provided in *`cpxmacro.h`* handle environment and error checks.
 
 Once the model is complete, *`CPXmipopt`* is called to solve the instance. The solution cost is printed to the terminal and also saved to a `.sol` file using *`CPXsolwrite`*. Timing is tracked via `chrono` library to measure solver performance.
+
+#figure(
+  image("cplex.png", width: 50%),
+  caption: [Board 20x20 with 20 holes, solved with CPLEX],
+)<visualize_cplex>
+
 
 = Part II - Tabu Search
 In Part II, Tabu Search was selected as the metaheuristic method to address the combinatorial optimization problem introduced in Part I. Tabu Search is an iterative improvement algorithm that explores the neighborhood of the current solution using local search operators, typically accepting only improving moves unless an aspiration criterion is met. To avoid cycling and promote exploration, recently visited solutions are marked as 'tabu' for a limited number of iterations via a tabu list. In this work, several enhancements to the basic Tabu Search scheme were introduced, including adaptive tenure control, frequency-based penalization, intensification through elite memory, and diversification via shaking mechanisms. These variations are described in the following sections.
@@ -184,6 +172,19 @@ Each iteration continues until a predefined maximum number of iterations (`maxIt
 
 An *aspiration criterion* is also employed: if a move is classified as tabu but leads to a globally better solution (i.e., improves upon the best-known cost), the move is accepted regardless of its tabu status.
 
+#figure(
+    grid(
+        columns: 3,     // 2 means 2 auto-sized columns
+        gutter: auto,    // space between columns
+        image("tabu_iterations/cropped/Figure_1.png"),
+        image("tabu_iterations/cropped/Figure_2.png"),
+        image("tabu_iterations/cropped/Figure_3.png"),
+        image("tabu_iterations/cropped/Figure_4.png"),
+        image("tabu_iterations/cropped/Figure_5.png")
+    ),
+    caption: [Tabu Search iterations on a 10x10 board with 5 holes. Each figure shows the current tour, the cost, and the 2-opt moves applied in that iteration. The best cost is reached in the 4th iteration, with a total of 5 iterations performed.]
+)<visualize_tabu>
+
 == Intensification and diversification
 
 The effectiveness of a Tabu Search algorithm often relies on its ability to balance intensification (deep search in promising areas) and diversification (exploration of new regions of the solution space). This implementation combines several mechanisms to adaptively control the search behavior based on its progress.
@@ -196,12 +197,42 @@ Conversely, if no improvement is observed for a number of iterations, the tenure
 The tenure is also initialized depending on the size and density of the board, providing a baseline sensitivity adapted to instance complexity. 
 
 === Intensification
-A set of *elite solutions* is maintained throughout the search. When the algorithm enters an intensification phase, triggered when the number of consecutive non-improving iterations exceeds a given *threshold*. At that point, the algorithm either restarts from a randomly selected elite solution (intensification) or applies a double-bridge move (diversification), depending on a probabilistic decision. it may restart from one of these high-quality tours. This strategy allows a focused search around promising regions and helps uncover subtle improvements that may be missed by random initialization.
+A set of *elite solutions* is maintained throughout the search. When the algorithm enters an intensification phase, triggered when the number of consecutive non-improving iterations exceeds a given *threshold*, it either restarts from a randomly selected elite solution (intensification) or applies a double-bridge move (diversification), depending on a probabilistic decision.
+The diversification mechanism is described in more detail in the following @double-bridge.
+Elite memory is maintained as *`std::vector<ScoredSolution> eliteSolutions`*. Whenever a new global best solution is found, it is added to the elite set, replacing the worst solution if the memory is already full. This ensures that the elite memory always contains the highest-quality solutions discovered during the search.
 
-=== Diversification
+=== Diversification <double-bridge>
 To escape local optima, a *double-bridge move* is used as a *shaking* mechanism. This perturbation, commonly found in Iterated Local Search and Tabu Search literature, involves removing four edges and reconnecting the resulting paths in a new order — effectively a *4-opt move*. The resulting solution differs significantly from the original, allowing the algorithm to jump to unexplored regions of the search space. After applying a double-bridge, the tabu list is typically reset to allow fresh exploration.
 
 Additionally, *frequency-based penalties* are applied during move evaluation. A matrix *`std::vector<std::vector<double>> freq`* tracks how often each edge appears in accepted solutions, and all edges receive a penalty based on how frequently they were used in the past. Overused edges incur a larger penalty, which biases the search away from frequently traversed components. This encourages diversification by guiding the search away from repeatedly used components, without overriding the true objective.
+
+The penalty is computed during the evaluation of each candidate 2-opt move. Specifically, for every move that would replace the arcs (h->i) and (j→l) with (h→j) and (i→l), a penalty is computed based on the frequency of the edges involved: `freq[h][i]`, `freq[i][j]`, and `freq[j][l]`. The total penalty is scaled by a tunable parameter *`lambda`*, which controls the strength of the frequency penalty relative to the true objective function:
+
+```cpp
+double freqPenalty = lambda * (freq[i][j] + freq[h][i] + freq[j][l]);
+double neighCostVariation = - tsp.cost[h][i] - tsp.cost[j][l]
+                            + tsp.cost[h][j] + tsp.cost[i][l]
+                            + freqPenalty;
+```
+
+The value of lambda is determined through parameter tuning and allows adjusting the balance between intensification (following cost improvements) and diversification (penalizing overused paths). A higher lambda encourages more exploration by favoring moves that use rarely visited edges, while a lower value prioritizes pure cost minimization.
+
+The `freq` matrix is updated periodically, not at every iteration. This is done to avoid overwhelming the algorithm with short-term fluctuations and to maintain meaningful penalty values. The update is triggered every `decayInterval` iterations (typically 100), or immediately after a tenure adaptation event. During the update, the frequency of all edges used in the current best solution is incremented proportionally to a tunable parameter *`decayFactor`*.
+
+#pagebreak()
+
+```cpp
+void TSPSolver::updateFrequencies(const TSPSolution& sol) {
+    int n = sol.sequence.size() - 1; // exclude return to start
+    for (int k = 0; k < n; ++k) {
+        int a = sol.sequence[k];
+        int b = sol.sequence[k + 1];
+        freq[a][b] += decayFactor;
+    }
+}
+```
+
+This means that edges appearing in good-quality solutions are gradually penalized over time. The `decayFactor` controls the magnitude of the update: a higher value leads to stronger reinforcement (and thus stronger penalties later), while a lower value produces weaker and slower growth in frequency. The tuning of `decayFactor` allows fine-grained control over how quickly the search is pushed away from familiar paths.
 
 These components work together to form a reactive and adaptive Tabu Search, capable of both intensifying near elite tours and diversifying when progress stalls.
 
@@ -218,14 +249,17 @@ To improve the performance of the Tabu Search algorithm across a wide range of i
 int noImproveThreshold = static_cast<int>(alpha * tsp.n);
 int tenureAdaptThreshold = static_cast<int>(beta * noImproveThreshold);
 ```
+`noImproveThreshold` is then used to initialize `shakeThreshold`, which is the number of iterations after which we choose randomly to restart from an elite solution (so applying intensification) or to apply a double-bridge move (diversification).
+
+Similarly, `tenureAdaptThreshold` determines how often the tabu tenure (tabu length) is adapted to intensify the search by reducing the tabu length after improvements. By introducing both `alpha` and `beta` parameters, we can independently tune the frequency of these two mechanisms, allowing tenure adaptation (controlled by `beta`) to occur more often or differently than the shaking/intensification step (controlled by `alpha`).
 
 - *`decayFactor`*: controls the rate at which the frequency matrix decays over time.
 
 - *`lambda`*: determines the weight of the frequency-based penalty term added to the objective.
 
-A dedicated C++ tool (*`find_best_parameters.cpp`*) systematically explores combinations of these parameters across a grid of predefined values. For each pair of instance size and density, three boards are generated (repeated trials with different random seeds). Then, for each board, the algorithm is run multiple times (with different parameters), and the best result is retained. The tool logs the best result per board in a CSV file, recording the final cost, runtime, and parameters used. This data is later used to determine the *optimal configuration for each board class*.
+A dedicated C++ tool (*`find_best_parameters.cpp`*) systematically explores combinations of these parameters across a grid of predefined values. For *each pair* of instance size and density, *three boards* are generated (repeated trials with different random seeds). Then, for each board, the algorithm is run multiple times (with different parameters), and the best result is retained. The tool logs the best result per board in a CSV file, recording the final cost, runtime, and parameters used. This data is later used to determine the *optimal configuration for each board class*.
 
-After this, a Python script (*`summarize_results.py`*) reads the tuning results and aggregates them to compute summary statistics for each (size, density) configuration. For each group, it extracts the best-performing parameter set (in terms of lowest final cost), the *mean* and *standard deviation* of final costs, and the number of tested configurations. This summary is saved in `summary_tuning.csv` and is later used for benchmarking.
+For each combination of board size and density, the script extracts the best result (lowest final cost) and the corresponding parameter values.
 
 #let results = csv("../summary_tuning_first.csv", row-type: array)
 #let data = results.slice(1, results.len()) // skip header row
@@ -240,13 +274,15 @@ After this, a Python script (*`summarize_results.py`*) reads the tuning results 
   table(
     table.header([Size], [Density], [Best Cost], [Average Cost], [Standard Deviation], [Alpha], [Beta], [Decay Factor], [Lambda]),
     columns: 9,
-    fill: (_, y) => if y == 0 { gray.lighten(75%) },
+    fill: (_, y) => {
+      if y == 0 { rgb("#d4e6ec") }
+      else if y > 2 and calc.rem(y - 3, 8) < 4 { rgb("EAF2F5")  }
+      else { none }
+    },
     ..filtered.flatten(),
   ),
-  caption: [`summary_tuning.csv` — best parameters and performance per board size/density (first ranges explored)],
+  caption: [`summary_tuning.csv` — best parameters and performance per board size/density (first ranges explored - keep as definitive)],
 ) <summary_tuning_first>
-
-// The parameter tuning results reveal clear trends across board sizes and densities. For small boards (e.g., 5x5), the best performance is achieved with minimal reliance on memory mechanisms—low β, λ, and decay factor—indicating that a greedy search guided primarily by cost is sufficient. As board size and density increase, the algorithm benefits significantly from stronger memory effects: higher β values, nonzero λ, and slower decay factors (up to 0.95) consistently appear among the best configurations. Across all cases, α = 0.5 remains a stable choice, balancing the cost and memory penalty terms. These findings suggest that diversification strategies and long-term memory become increasingly important as the problem scale grows.
 
 The parameter space explored during tuning was selected based on recommendations from prior literature on Tabu Search and Reactive Search heuristics, and refined through empirical intuition. The selected ranges were the following:
 - `alpha`: [0.5, 0.75, 1.0]
@@ -254,9 +290,9 @@ The parameter space explored during tuning was selected based on recommendations
 - `decayFactor`: [0.85, 0.9, 0.95]
 - `lambda`: [0.0, 0.01, 0.05]
 
-However, an analysis of the tuning results reveals that optimal configurations tend to cluster near the lower bounds of some tested intervals. For example, the value *`alpha` = 0.5* was consistently selected across many instance classes, suggesting that encouraging early diversification often leads to better outcomes. Similarly, *`beta` = 0.3* frequently emerged as the most effective setting, indicating that a relatively slow adaptation of the tabu tenure provides better control over the search dynamics.
+However, an analysis of the tuning results reveals that optimal configurations tend to cluster near the lower bounds of some tested intervals  (as illustrated in @summary_tuning_first). For example, the value *`alpha` = 0.5* was consistently selected across many instance classes, suggesting that encouraging early diversification often leads to better outcomes. Similarly, *`beta` = 0.3* frequently emerged as the most effective setting, indicating that a relatively slow adaptation of the tabu tenure provides better control over the search dynamics.
 
-Based on the insights from the initial tuning phase, the search was refined by narrowing the parameter ranges to focus on the most promising regions. In particular, we explored `alpha` : [0.15, 0.35, 0.5] and `beta` : [0.1, 0.3, 0.5], which better reflect the values that previously were found to yield the best results.
+Based on the insights from the initial tuning phase, the search was refined by narrowing the parameter ranges to focus on the most promising regions. In particular, we explored `alpha` : [0.35, 0.5, 0.75] and `beta` : [0.2, 0.3, 0.5], which better reflect the values that previously were found to yield the best results.
 
 #let results = csv("../summary_tuning_final.csv", row-type: array)
 #let data = results.slice(1, results.len()) // skip header row
@@ -271,20 +307,34 @@ Based on the insights from the initial tuning phase, the search was refined by n
   table(
     table.header([Size], [Density], [Best Cost], [Average Cost], [Standard Deviation], [Alpha], [Beta], [Decay Factor], [Lambda]),
     columns: 9,
-    fill: (_, y) => if y == 0 { gray.lighten(75%) },
+    fill: (_, y) => {
+      if y == 0 { rgb("#d4e6ec") }
+      else if y > 2 and calc.rem(y - 3, 8) < 4 { rgb("EAF2F5")  }
+      else { none }
+    },
     ..filtered.flatten(),
   ),
-  caption: [`summary_tuning.csv` — best parameters and performance per board size/density (final ranges)],
-) <summary_tuning_final>
+  caption: [`summary_tuning.csv` — best parameters and performance per board size/density (refined ranges)],
+)
 
-The refined parameter search reveals that the optimal values for `alpha` and `beta` are now more stable, with the best configurations clustering within the narrowed ranges rather than at their extremes. This indicates that the tuning process has effectively identified robust parameter regions.
+#figure(
+  image("../OLDER_VERSIONbenchmark_results_summary_gap_percent_plot.png"),
+  caption: [performance gap between Tabu Search and CPLEX for each board configuration - first ranges explored],
+)
 
-It can be observed that the best cost results in some cases appear slightly worse than those from the previous parameter ranges. This is likely due to the inherent randomness in the generation of board instances.
+#figure(
+  image("../2506benchmark_results_gap_summary_gap_percent_plot.png"),
+  caption: [performance gap between Tabu Search and CPLEX for each board configuration - refined ranges],
+)
+
+// PERFORMANCE ARE SLIGHTLY WORSE (better just in few cases)
+
+A comparison of the two tuning phases shows that, although small performance variations may be partially due to randomness in board generation, the original parameter ranges consistently yield better results across most configurations. Only a few combinations from the refined search outperform the initial settings. Therefore, the first tuning phase is retained as the final configuration.
 
 === Benchmarking framework
-To assess the performance of the Tabu Search algorithm against the exact method developed in Part I (CPLEX), a dedicated benchmarking script was developed. This tool runs both solvers on a common set of randomly generated instances and collects solving time and final cost for each.
+To assess the performance of the Tabu Search algorithm against the exact method developed in Part I (CPLEX), a dedicated benchmarking script was developed. This tool runs both solvers on a common set of randomly generated instances and collects *solving time* and *final cost* for each.
 
-During benchmarking, the script *`run_experiments.cpp`* reads from `summary_tuning.csv` to extract the best parameters for Tabu Search for each (size, density) pair. For each configuration, three distinct board instances are generated. Each instance is then solved by both the Tabu Search (with tuned parameters) and the CPLEX-based solver.
+During benchmarking, the script *`run_experiments.cpp`* reads from `summary_tuning.csv` to extract the best parameters for Tabu Search for each (size, density) pair. For each configuration, *three* distinct *board instances* are generated. Each instance is then solved by both the Tabu Search (with tuned parameters) and the CPLEX-based solver.
 
 Each run is timed, and the final cost is parsed from the solver output. All results are saved in a `benchmark_results.csv` file, which includes solver name, board features, repeat index, final cost, and solving time.
 
@@ -294,22 +344,51 @@ After collecting the results from both solvers, we compute the *performance gap*
 
 The script *`results_analysis.py`* computes this gap for each instance and aggregates the results by board size and density, reporting the mean and standard deviation of the gap across all test cases
 
-#let gap_results = csv("../benchmark_gap_summary.csv", row-type: array)
+#let gap_results = csv("../OLDER_VERSION-pre2406benchmark_results_gap_summary.csv", row-type: array)
 #let gap_data = gap_results.slice(1, gap_results.len()) // skip header row
+#let filtered = gap_data.map(
+  it => {
+    (it.at(0), it.at(1), str(calc.round(float(it.at(4)), digits: 2)), str(calc.round(float(it.at(5)), digits: 2)), 
+     str(calc.round(float(it.at(7)), digits: 5)))
+  }
+)
+
 
 #figure(
   table(
-    table.header([Size], [Density], [Mean Gap %], [Std Gap %], [Instances]),
+    table.header([Size], [Density], [Mean Gap %], [Std Gap %], [Mean Time Gap (s)]),
     columns: 5,
-    fill: (_, y) => if y == 0 { gray.lighten(75%) },
-    ..gap_data.flatten(),
+    fill: (_, y) => {
+      if y == 0 { rgb("#d4e6ec") }
+      else if y > 2 and calc.rem(y - 3, 8) < 4 { rgb("EAF2F5")  }
+      else { none }
+    },
+    ..filtered.flatten(),
   ),
   caption: [`benchmark_gap_summary.csv` — mean and standard deviation of the performance gap between Tabu Search and CPLEX per board configuration],
 )
-ANALYSIS: TODO
-//The results show that for small and medium-sized boards, Tabu Search achieves solutions within a few percent of the optimal cost, while for larger or denser boards, the gap increases but remains within acceptable limits for practical applications.
+
+#figure(
+  image("../OLDER_VERSION-pre2406benchmark_results_gap_summary_runtime_plot.png"),
+  caption: [runtime comparison between Tabu Search and CPLEX for each board configuration],
+)
+
+The *runtime* analysis highlights the scalability of Tabu Search: while CPLEX runtime grows sharply with board size and density, Tabu Search maintains nearly constant performance. 
+Considering the application context and the observed runtime gap, it is acceptable to use CPLEX for instances up to approximately 15x15 in size. Beyond this threshold, the runtime becomes prohibitive for practical use.
+
+The results show that for small and medium-sized boards, Tabu Search consistently produces solutions within a few percent of the optimal cost computed by CPLEX. As the board size and density increase, the performance gap tends to grow, yet remains within acceptable limits for practical applications, particularly when considering the significant runtime advantage of Tabu Search.
+
+An examination of the best parameters reveals that smaller boards tend to benefit from configurations with *lower* values of *alpha* and *beta*, *no penalization* (*lambda* equal to zero), and standard decay factors, indicating that in *simpler scenarios* a more *intensification*-driven search without penalties is sufficient. Conversely, as the board size increases, the optimal configurations shift toward *higher alpha* values and *more frequent decay resets*, suggesting a greater need for *diversification* and memory to effectively navigate more complex solution spaces. The use of non-zero `lambda` values in larger instances further supports the idea that penalizing frequently visited moves becomes useful only when the instance size makes revisiting more likely.
 
 = Conclusion
+
+This project addressed the Traveling Salesman Problem in the context of PCB drilling optimization, comparing an exact CPLEX-based solver with a metaheuristic Tabu Search approach. While CPLEX always returns optimal solutions, its runtime grows quickly with instance size and density, making it unsuitable for large-scale configurations. Tabu Search, in contrast, provides high-quality solutions in a fraction of the time.
+
+Quantitatively, the Tabu Search algorithm consistently finds solutions with a gap below 2% for instances up to size 20. For the largest size (30x30), the mean gap rises gradually, reaching 5.04% in the densest case. Despite this increase, the trade-off is justified by a substantial runtime advantage.
+
+The performance of Tabu Search heavily depends on parameter tuning, with specific configurations showing better robustness across different board densities.
+
+In conclusion, Tabu Search emerges as a scalable and efficient heuristic, capable of producing near-optimal solutions even for large, complex instances where exact solvers are computationally prohibitive.
 
 = Setup and execution instructions
 This section outlines the steps necessary to compile and run the entire Tabu Search and CPLEX-based benchmarking pipeline, from board generation to result visualization.
@@ -398,54 +477,56 @@ The data can be further visualized using the companion plotting script *`plot_re
 
 The pipeline includes visualization tools to inspect solver behavior:
 
-Tabu Search Tour Evolution:
-
-```bash
-python3 part2/visualize_ts.py <basename>
-# Requires <basename>.dat and <basename>_log.txt
-```
-
 CPLEX Solution Path (XML):
 
 ```bash
 python3 part1/visualize_drill_path.py <basename>
 # Requires <basename>.dat and <basename>.sol
 ```
+The result will be a grid representation of the board and the path, as shown in @visualize_cplex.
 
-= Examples
-== Citation
-This is something stated from a source @example-source.
+Tabu Search Tour Evolution:
 
-== Tables
-Here's a table:
-#figure(
-  caption: [Table of numbers],
-  table(
-    columns: (auto, auto),
-    inset: 10pt,
-    align: horizon,
-    table.header(
-      [*Letters*], [*Number*], 
-    ),
-    [Five], [5],
-    [Eight], [8],
-  ) 
-)
+```bash
+python3 part2/visualize_ts.py <basename>
+# Requires <basename>.dat and <basename>_log.txt
+```
+This allow to visualize each step of the Tabu Search, showing how the tour evolves over iterations, including also the 2-opt moves applied and the current cost at each step (@visualize_tabu).
 
-== Code blocks
-Here's a rust code block:
-#figure(
-  caption: [Epic code],
-  ```rs
-  fn main() {
-      let name = "buddy";
-      let greeting = format!("Hello, {}!", name);
-      println!("{}", greeting);
-  }
-  ```
-)
+// = Examples
+// == Citation
+// This is something stated from a source @example-source.
 
-== Math
-Here's some math:
-$ integral_0^infinity e^(-x^2) dif x = sqrt(pi)/2 $
-And some more: $sigma / theta dot i$.
+// == Tables
+// Here's a table:
+// #figure(
+//   caption: [Table of numbers],
+//   table(
+//     columns: (auto, auto),
+//     inset: 10pt,
+//     align: horizon,
+//     table.header(
+//       [*Letters*], [*Number*], 
+//     ),
+//     [Five], [5],
+//     [Eight], [8],
+//   ) 
+// )
+
+// == Code blocks
+// Here's a rust code block:
+// #figure(
+//   caption: [Epic code],
+//   ```rs
+//   fn main() {
+//       let name = "buddy";
+//       let greeting = format!("Hello, {}!", name);
+//       println!("{}", greeting);
+//   }
+//   ```
+// )
+
+// == Math
+// Here's some math:
+// $ integral_0^infinity e^(-x^2) dif x = sqrt(pi)/2 $
+// And some more: $sigma / theta dot i$.

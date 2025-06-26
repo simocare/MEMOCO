@@ -197,6 +197,13 @@ double TSPSolver::findBestNeighbor ( const TSP& tsp , const TSPSolution& currSol
   //logLine("entering\n");
   double bestCostVariation = tsp.infinite; // the change in total tour cost if we apply a 2-opt move
 
+  // h, i, j, l are node indices for a possible 2-opt move:
+  // h = node before the segment (currSol.sequence[a-1])
+  // i = first node of the segment to invert (currSol.sequence[a])
+  // j = last node of the segment to invert (currSol.sequence[b])
+  // l = node after the segment (currSol.sequence[b+1])
+  // The move reconnects h-j and i-l, inverting the segment between
+
   // intial and final position are fixed (initial/final node remains 0)
   for ( uint a = 1 ; a < currSol.sequence.size() - 2 ; a++ ) {
     int h = currSol.sequence[a-1];

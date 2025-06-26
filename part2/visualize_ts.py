@@ -21,11 +21,13 @@ def parse_log_file(filepath):
         if line.startswith("TOUR") and not starting_tour:
             starting_tour = list(map(int, line.strip().split()[1:]))
         elif line.startswith("VALUE") and starting_value is None:
-            starting_value = float(line.strip().split()[1])
+            parts = line.strip().replace('->', '').split()
+            starting_value = float(parts[1])
         elif line.startswith("TOUR"):
             tour = list(map(int, line.strip().split()[1:]))
         elif line.startswith("VALUE"):
-            values.append(float(line.strip().split()[1]))
+            parts = line.strip().replace('->', '').split()
+            values.append(float(parts[1]))
             tours.append(tour.copy())
         elif line.startswith("MOVE"):
             parts = line.strip().replace(',', '').split()[1:]

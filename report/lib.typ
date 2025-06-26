@@ -145,8 +145,8 @@
   // main.typ
   body
 
-  pagebreak()
+  //pagebreak()
 
   // https://github.com/typst/hayagriva/blob/main/docs/file-format.md
-  bibliography("template/" + references, title: t.references)
+  //bibliography("template/" + references, title: t.references)
 }
