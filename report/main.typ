@@ -136,6 +136,11 @@ Once the model is complete, *`CPXmipopt`* is called to solve the instance. The s
 In Part II, Tabu Search was selected as the metaheuristic method to address the combinatorial optimization problem introduced in Part I. Tabu Search is an iterative improvement algorithm that explores the neighborhood of the current solution using local search operators, typically accepting only improving moves unless an aspiration criterion is met. To avoid cycling and promote exploration, recently visited solutions are marked as 'tabu' for a limited number of iterations via a tabu list. In this work, several enhancements to the basic Tabu Search scheme were introduced, including adaptive tenure control, frequency-based penalization, intensification through elite memory, and diversification via shaking mechanisms. These variations are described in the following sections.
 The algorithm was developed in C++ and uses the same `.dat` input files as in Part I. This ensures consistent input format and allows for direct comparison of results and solving times between the Tabu Search and the CPLEX-based approach.
 
+=== Solution Representation
+The `TSPSolution` struct represents a candidate solution, storing the tour as a` std::vector<int>` that encodes the visiting order of nodes. It includes basic utility methods (e.g., copy constructor, assignment operator, print function) to facilitate manipulation and inspection of solutions.
+
+Problem instances are handled by the `TSP` class, which reads a square grid from file and identifies valid nodes (as previously described, cells marked with 1). It extracts their coordinates and computes a full pairwise distance matrix using Euclidean distances. The class stores the number of nodes and the (symmetric) cost matrix.
+
 == Tabu List representation
 
 A crucial component of any Tabu Search implementation is the tabu list, used to temporarily forbid recently applied moves and thus prevent cycling. In this implementation, the tabu list is realized as a *`std::vector<int>`* storing, for each node, the last iteration in which it was involved in a move (2-opt).
