@@ -202,7 +202,7 @@ Conversely, if no improvement is observed for a number of iterations, the tenure
 The tenure is also initialized depending on the size and density of the board, providing a baseline sensitivity adapted to instance complexity. 
 
 === Intensification
-A set of *elite solutions* is maintained throughout the search. When the algorithm enters an intensification phase, triggered when the number of consecutive non-improving iterations exceeds a given *threshold*, it either restarts from a randomly selected elite solution (intensification) or applies a double-bridge move (diversification), depending on a probabilistic decision.
+A set of *elite solutions* is maintained throughout the search. When the algorithm enters an intensification phase, triggered when the number of consecutive non-improving iterations exceeds a given *threshold* (parameters `alpha` and `beta`), it either restarts from a randomly selected elite solution (intensification) or applies a double-bridge move (diversification), depending on a probabilistic decision.
 The diversification mechanism is described in more detail in the following @double-bridge.
 Elite memory is maintained as *`std::vector<ScoredSolution> eliteSolutions`*. Whenever a new global best solution is found, it is added to the elite set, replacing the worst solution if the memory is already full. This ensures that the elite memory always contains the highest-quality solutions discovered during the search.
 
