@@ -428,8 +428,6 @@ part1/generate_board.out <size> <num_holes> <output_file.dat>
 
 - `<output_file.dat>`: output path for the generated board file.
 
-If you want to run the board generator (independently of `find_best_parameters.out` or `run_experiments.out`), you need to uncomment the main in `generate_board.cpp`, the specific line in the Makefile, and then compile it with `make` in the `part1` directory.
-
 == Solving an Instance
 
 Once a board has been generated, it can be solved using either of the two solvers:
@@ -461,7 +459,14 @@ This tool not only tests various combinations of parameters across multiple conf
 To aggregate the tuning results:
 
 ```bash
-python3 summarize_results.py  # Produces summary_tuning.csv
+python summarize_results.py  # Produces summary_tuning.csv
+```
+
+Requirements to run this script in laboratory environment:
+```bash
+python -m virtualenv venv
+source venv/bin/activate
+pip install pandas
 ```
 
 == Running Benchmark Experiments
@@ -487,7 +492,7 @@ The pipeline includes visualization tools to inspect solver behavior:
 CPLEX Solution Path (XML):
 
 ```bash
-python3 part1/visualize_drill_path.py <basename>
+python part1/visualize_drill_path.py <basename>
 # Requires <basename>.dat and <basename>.sol
 ```
 The result will be a grid representation of the board and the path, as shown in @visualize_cplex.
@@ -495,7 +500,7 @@ The result will be a grid representation of the board and the path, as shown in 
 Tabu Search Tour Evolution:
 
 ```bash
-python3 part2/visualize_ts.py <basename>
+python part2/visualize_ts.py <basename>
 # Requires <basename>.dat and <basename>_log.txt
 ```
 This allow to visualize each step of the Tabu Search, showing how the tour evolves over iterations, including also the 2-opt moves applied and the current cost at each step (@visualize_tabu).
