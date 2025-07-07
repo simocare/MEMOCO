@@ -428,6 +428,8 @@ part1/generate_board.out <size> <num_holes> <output_file.dat>
 
 - `<output_file.dat>`: output path for the generated board file.
 
+If you want to run the board generator (independently of `find_best_parameters.out` or `run_experiments.out`), you need to uncomment the main in `generate_board.cpp`, the specific line in the Makefile, and then compile it with `make` in the `part1` directory.
+
 == Solving an Instance
 
 Once a board has been generated, it can be solved using either of the two solvers:
@@ -497,41 +499,3 @@ python3 part2/visualize_ts.py <basename>
 # Requires <basename>.dat and <basename>_log.txt
 ```
 This allow to visualize each step of the Tabu Search, showing how the tour evolves over iterations, including also the 2-opt moves applied and the current cost at each step (@visualize_tabu).
-
-// = Examples
-// == Citation
-// This is something stated from a source @example-source.
-
-// == Tables
-// Here's a table:
-// #figure(
-//   caption: [Table of numbers],
-//   table(
-//     columns: (auto, auto),
-//     inset: 10pt,
-//     align: horizon,
-//     table.header(
-//       [*Letters*], [*Number*], 
-//     ),
-//     [Five], [5],
-//     [Eight], [8],
-//   ) 
-// )
-
-// == Code blocks
-// Here's a rust code block:
-// #figure(
-//   caption: [Epic code],
-//   ```rs
-//   fn main() {
-//       let name = "buddy";
-//       let greeting = format!("Hello, {}!", name);
-//       println!("{}", greeting);
-//   }
-//   ```
-// )
-
-// == Math
-// Here's some math:
-// $ integral_0^infinity e^(-x^2) dif x = sqrt(pi)/2 $
-// And some more: $sigma / theta dot i$.
