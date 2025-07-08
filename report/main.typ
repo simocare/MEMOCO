@@ -264,7 +264,7 @@ Similarly, `tenureAdaptThreshold` determines how often the tabu tenure (tabu len
 
 A dedicated C++ tool (*`find_best_parameters.cpp`*) systematically explores combinations of these parameters across a grid of predefined values. For *each pair* of instance size and density, *three boards* are generated (repeated trials with different random seeds). Then, for each board, the algorithm is run multiple times (with different parameters), and the best result is retained. The tool logs the best result per board in a CSV file, recording the final cost, runtime, and parameters used. This data is later used to determine the *optimal configuration for each board class*.
 
-For each combination of board size and density, the script extracts the best result (lowest final cost) and the corresponding parameter values.
+For each combination of board size and density, the script *`summarize_results.py`* extracts the best result (lowest final cost) and the corresponding parameter values and saves them into `summary_tuning.csv`.
 
 #let results = csv("../summary_tuning_first.csv", row-type: array)
 #let data = results.slice(1, results.len()) // skip header row
