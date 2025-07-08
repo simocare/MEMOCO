@@ -211,7 +211,7 @@ To escape local optima, a *double-bridge move* is used as a *shaking* mechanism.
 
 Additionally, *frequency-based penalties* are applied during move evaluation. A matrix *`std::vector<std::vector<double>> freq`* tracks how often each edge appears in accepted solutions, and all edges receive a penalty based on how frequently they were used in the past. Overused edges incur a larger penalty, which biases the search away from frequently traversed components. This encourages diversification by guiding the search away from repeatedly used components, without overriding the true objective.
 
-The penalty is computed during the evaluation of each candidate 2-opt move. Specifically, for every move that would replace the arcs (h->i) and (j→l) with (h→j) and (i→l), a penalty is computed based on the frequency of the edges involved: `freq[h][i]`, `freq[i][j]`, and `freq[j][l]`. The total penalty is scaled by a tunable parameter *`lambda`*, which controls the strength of the frequency penalty relative to the true objective function:
+The penalty is computed during the evaluation of each candidate 2-opt move. Specifically, for every move that would replace the arcs (h->i) and (j->l) with (h->j) and (i->l), a penalty is computed based on the frequency of the edges involved: `freq[h][i]`, `freq[i][j]`, and `freq[j][l]`. The total penalty is scaled by a tunable parameter *`lambda`*, which controls the strength of the frequency penalty relative to the true objective function:
 
 ```cpp
 double freqPenalty = lambda * (freq[i][j] + freq[h][i] + freq[j][l]);
